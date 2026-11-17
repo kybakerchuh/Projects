@@ -160,6 +160,41 @@
         display: flex;
       }
     }
+    @media (pointer: coarse), (max-width: 768px) {
+      .scanlines {
+        display: none !important;
+      }
+    }
+    @media (max-height: 520px) {
+      #top-scoreboard-hud {
+        min-height: 42px !important;
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+      }
+      #overlay-playcall,
+      #overlay-def-playcall {
+        max-height: 82dvh !important;
+        padding: 8px !important;
+      }
+      #overlay-playcall > div,
+      #overlay-def-playcall > div {
+        gap: 6px !important;
+      }
+      #overlay-playcall > div > div:first-child,
+      #overlay-def-playcall > div > div:first-child {
+        padding: 6px 8px !important;
+        gap: 6px !important;
+      }
+      #playcall-footer,
+      #def-playcall-footer {
+        display: none !important;
+      }
+      #playcall-options,
+      #def-playcall-options {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+      }
+    }
   </style>
 </head>
 <body class="w-full h-full overflow-hidden relative">
@@ -469,20 +504,29 @@
         </div>
       </div>
 
-      <!-- Left Virtual Thumbstick (Mobile / Touch Mode) -->
-      <div id="touch-joystick-zone" class="hidden absolute left-3 bottom-3 z-20 w-36 h-36 sm:w-40 sm:h-40 flex items-center justify-center">
+      <!-- Left Floating Virtual Thumbstick (Mobile / Touch Mode) -->
+      <div id="touch-joystick-zone" class="hidden absolute left-2 bottom-2 z-20 w-40 h-40 sm:w-44 sm:h-44 flex items-center justify-center">
         <div id="touch-joystick-base" class="touch-joystick-base">
           <div id="touch-joystick-knob" class="touch-joystick-knob"></div>
         </div>
       </div>
 
       <!-- In-Game Touch / Quick Action Controls -->
-      <div id="mobile-controls" class="hidden absolute bottom-3 right-3 z-20 flex flex-wrap justify-end gap-2 max-w-[54vw]">
-        <button id="btn-turbo" class="pixel-btn btn-blue px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">TURBO</button>
-        <button id="btn-qb-scramble" class="hidden pixel-btn btn-gold px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">SCRAMBLE</button>
-        <button id="btn-juke" class="hidden pixel-btn btn-red px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">JUKE!</button>
-        <button id="btn-def-switch" class="hidden pixel-btn btn-slate px-3.5 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">SWITCH</button>
-        <button id="btn-def-tackle" class="hidden pixel-btn btn-red px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">TACKLE!</button>
+      <div id="mobile-controls" class="hidden absolute bottom-3 right-3 z-20 flex flex-col items-end gap-1.5 max-w-[56vw]">
+        <div id="touch-quick-pass" class="hidden flex flex-wrap justify-end gap-1.5">
+          <button data-pass-idx="0" class="touch-pass-btn pixel-btn btn-gold px-3 py-2 min-w-[38px] min-h-[40px] text-xs opacity-95">1</button>
+          <button data-pass-idx="1" class="touch-pass-btn pixel-btn btn-gold px-3 py-2 min-w-[38px] min-h-[40px] text-xs opacity-95">2</button>
+          <button data-pass-idx="2" class="touch-pass-btn pixel-btn btn-gold px-3 py-2 min-w-[38px] min-h-[40px] text-xs opacity-95">3</button>
+          <button data-pass-idx="3" class="touch-pass-btn pixel-btn btn-gold px-3 py-2 min-w-[38px] min-h-[40px] text-xs opacity-95">4</button>
+          <button data-pass-idx="4" class="touch-pass-btn pixel-btn btn-gold px-3 py-2 min-w-[38px] min-h-[40px] text-xs opacity-95">5</button>
+        </div>
+        <div class="flex flex-wrap justify-end gap-2">
+          <button id="btn-turbo" class="pixel-btn btn-blue px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">TURBO</button>
+          <button id="btn-qb-scramble" class="hidden pixel-btn btn-gold px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">SCRAMBLE</button>
+          <button id="btn-juke" class="hidden pixel-btn btn-red px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">JUKE!</button>
+          <button id="btn-def-switch" class="hidden pixel-btn btn-slate px-3.5 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">SWITCH</button>
+          <button id="btn-def-tackle" class="hidden pixel-btn btn-red px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">TACKLE!</button>
+        </div>
       </div>
 
       <!-- Live In-Game Box Score Modal -->
@@ -5765,6 +5809,8 @@ function ensureCareerSeasonIntegrity() {
     const touchJoystick = {
       active: false,
       pointerId: null,
+      originX: 0,
+      originY: 0,
       vx: 0,
       vy: 0,
       deadzone: 0.14
@@ -5790,13 +5836,16 @@ function ensureCareerSeasonIntegrity() {
       touchJoystick.vx = 0;
       touchJoystick.vy = 0;
       keys['TURBO'] = false;
+      const base = document.getElementById('touch-joystick-base');
       const knob = document.getElementById('touch-joystick-knob');
+      if (base) base.style.transform = 'translate3d(0, 0, 0)';
       if (knob) knob.style.transform = 'translate3d(0, 0, 0)';
     }
 
     function updateMobileControls() {
       const box = document.getElementById('mobile-controls');
       const joyZone = document.getElementById('touch-joystick-zone');
+      const quickPassBox = document.getElementById('touch-quick-pass');
       const scrambleBtn = document.getElementById('btn-qb-scramble');
       const jukeBtn = document.getElementById('btn-juke');
       const swBtn = document.getElementById('btn-def-switch');
@@ -5806,11 +5855,23 @@ function ensureCareerSeasonIntegrity() {
       const isUserLive = match.possession === 'USER' && (match.phase === 'PASS_DROPBACK' || match.phase === 'RUN_PLAY');
       const isDefLive = match.possession === 'CPU' && match.phase === 'DEF_LIVE';
       const isLive = isUserLive || isDefLive;
+      const showTouchPad = shouldShowTouchJoystick();
 
       if (!isLive) resetTouchControls();
 
       box.classList.toggle('hidden', !isLive || touchPadMode === 'OFF');
-      if (joyZone) joyZone.classList.toggle('hidden', !isLive || !shouldShowTouchJoystick());
+      if (joyZone) joyZone.classList.toggle('hidden', !isLive || !showTouchPad);
+      if (quickPassBox) {
+        const showQuickPass = showTouchPad && match.possession === 'USER' && match.phase === 'PASS_DROPBACK';
+        quickPassBox.classList.toggle('hidden', !showQuickPass);
+        if (showQuickPass) {
+          quickPassBox.querySelectorAll('.touch-pass-btn').forEach(btn => {
+            const idx = parseInt(btn.getAttribute('data-pass-idx') || '-1', 10);
+            const hasRec = match.players.some(p => p.side === 'OFF' && p.isEligible && p.num === idx + 2);
+            btn.classList.toggle('hidden', !hasRec);
+          });
+        }
+      }
       if (scrambleBtn) scrambleBtn.classList.toggle('hidden', !(match.possession === 'USER' && match.phase === 'PASS_DROPBACK'));
       if (jukeBtn) jukeBtn.classList.toggle('hidden', !(match.possession === 'USER' && match.phase === 'RUN_PLAY'));
       if (swBtn) swBtn.classList.toggle('hidden', !isDefLive);
@@ -7331,6 +7392,7 @@ function ensureCareerSeasonIntegrity() {
     function renderMatch() {
       const W = canvas.width;
       const H = canvas.height;
+      if (W <= 0 || H <= 0) return;
       ctx.clearRect(0, 0, W, H);
 
       const topHud = document.getElementById('top-scoreboard-hud');
@@ -7348,97 +7410,106 @@ function ensureCareerSeasonIntegrity() {
       const toPxX = (fx) => fieldL + (fx / FIELD_W) * fieldPxW;
       const toPxY = (fy) => fieldT + (fy / FIELD_H) * fieldPxH;
 
-      // Dynamic Team-Themed Stadium Surround Apron
+      // Offscreen Static Field Cache (avoids redrawing ~180 turf/line/text shapes every frame)
       const pal = (match && match.stadiumPalette) || { primary: '#1e293b', secondary: '#facc15', homeId: 'NFL', homeCity: 'GRIDIRON', homeName: 'STADIUM' };
-      ctx.fillStyle = '#090d16';
-      ctx.fillRect(0, 0, W, H);
-
-      ctx.fillStyle = pal.primary;
-      ctx.globalAlpha = 0.28;
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = 1.0;
-
-      // Sideline benches & stadium border accents
-      ctx.fillStyle = pal.secondary;
-      ctx.fillRect(fieldL - 6, fieldT - 6, fieldPxW + 12, 4);
-      ctx.fillRect(fieldL - 6, fieldB + 2, fieldPxW + 12, 4);
-
-      // Alternating mowed turf stripes (10-yard bands)
-      for (let i = 0; i < 12; i++) {
-        const x1 = toPxX(i * 10);
-        const x2 = toPxX((i + 1) * 10);
-        ctx.fillStyle = i % 2 === 0 ? '#146c2e' : '#187d36';
-        ctx.fillRect(x1, fieldT, x2 - x1 + 1, fieldPxH);
-      }
-
-      // End zones (Left = Home Team End Zone, Right = Away / Target End Zone)
       const leftEzTeam = match ? (match.userIsHome ? match.userTeam : match.cpuTeam) : { primary: '#1d4ed8', name: 'HOME' };
       const rightEzTeam = match ? (match.userIsHome ? match.cpuTeam : match.userTeam) : { primary: '#dc2626', name: 'AWAY' };
-      const ezW = toPxX(10) - toPxX(0);
+      const cacheKey = `${W}x${H}|${pal.primary}|${pal.secondary}|${leftEzTeam.primary}|${leftEzTeam.name}|${rightEzTeam.primary}|${rightEzTeam.name}`;
 
-      ctx.fillStyle = leftEzTeam.primary;
-      ctx.fillRect(fieldL, fieldT, ezW, fieldPxH);
-      ctx.fillStyle = rightEzTeam.primary;
-      ctx.fillRect(toPxX(110), fieldT, ezW, fieldPxH);
+      if (!window.__staticFieldCache || window.__staticFieldCache.key !== cacheKey) {
+        const offCanvas = document.createElement('canvas');
+        offCanvas.width = W;
+        offCanvas.height = H;
+        const fctx = offCanvas.getContext('2d');
 
-      // End zone team text
-      ctx.save();
-      ctx.fillStyle = 'rgba(255,255,255,0.88)';
-      ctx.font = `bold ${Math.max(12, Math.floor(ezW * 0.34))}px "Comic Sans MS", "Comic Neue", cursive, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.translate(fieldL + ezW / 2, fieldT + fieldPxH / 2);
-      ctx.rotate(-Math.PI / 2);
-      ctx.fillText(leftEzTeam.name, 0, 0);
-      ctx.restore();
+        fctx.fillStyle = '#090d16';
+        fctx.fillRect(0, 0, W, H);
 
-      ctx.save();
-      ctx.fillStyle = 'rgba(255,255,255,0.88)';
-      ctx.font = `bold ${Math.max(12, Math.floor(ezW * 0.34))}px "Comic Sans MS", "Comic Neue", cursive, sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.translate(toPxX(110) + ezW / 2, fieldT + fieldPxH / 2);
-      ctx.rotate(Math.PI / 2);
-      ctx.fillText(rightEzTeam.name, 0, 0);
-      ctx.restore();
+        fctx.fillStyle = pal.primary;
+        fctx.globalAlpha = 0.28;
+        fctx.fillRect(0, 0, W, H);
+        fctx.globalAlpha = 1.0;
 
-      // Yard lines (every 5 yards) & Hash Marks
-      ctx.strokeStyle = 'rgba(255,255,255,0.75)';
-      ctx.lineWidth = 1.5;
-      for (let yd = 10; yd <= 110; yd += 5) {
-        const px = toPxX(yd);
-        ctx.beginPath();
-        ctx.moveTo(px, fieldT);
-        ctx.lineTo(px, fieldB);
-        ctx.stroke();
+        // Sideline benches & stadium border accents
+        fctx.fillStyle = pal.secondary;
+        fctx.fillRect(fieldL - 6, fieldT - 6, fieldPxW + 12, 4);
+        fctx.fillRect(fieldL - 6, fieldB + 2, fieldPxW + 12, 4);
 
-        // Yard numbers every 10 yards
-        if (yd > 10 && yd < 110 && yd % 10 === 0) {
-          const disp = yd <= 60 ? yd - 10 : 110 - yd;
-          ctx.fillStyle = 'rgba(255,255,255,0.78)';
-          ctx.font = `bold ${Math.max(10, Math.floor(fieldPxH * 0.032))}px "Comic Sans MS", "Comic Neue", cursive, sans-serif`;
-          ctx.textAlign = 'center';
-          ctx.fillText(String(disp), px, fieldT + fieldPxH * 0.12);
-          ctx.fillText(String(disp), px, fieldB - fieldPxH * 0.09);
+        // Alternating mowed turf stripes (10-yard bands)
+        for (let i = 0; i < 12; i++) {
+          const x1 = toPxX(i * 10);
+          const x2 = toPxX((i + 1) * 10);
+          fctx.fillStyle = i % 2 === 0 ? '#146c2e' : '#187d36';
+          fctx.fillRect(x1, fieldT, x2 - x1 + 1, fieldPxH);
         }
-      }
 
-      // Single-yard boundary markers (ticks) between every 5-yard line along top & bottom sidelines
-      const tickLen = Math.max(5, Math.round(fieldPxH * 0.022));
-      ctx.strokeStyle = 'rgba(255,255,255,0.82)';
-      ctx.lineWidth = 1.25;
-      for (let yd = 11; yd < 110; yd += 1) {
-        if (yd % 5 === 0) continue;
-        const px = toPxX(yd);
-        ctx.beginPath();
-        // Top sideline 1-yard tick
-        ctx.moveTo(px, fieldT);
-        ctx.lineTo(px, fieldT + tickLen);
-        // Bottom sideline 1-yard tick
-        ctx.moveTo(px, fieldB - tickLen);
-        ctx.lineTo(px, fieldB);
-        ctx.stroke();
+        // End zones (Left = Home Team End Zone, Right = Away / Target End Zone)
+        const ezW = toPxX(10) - toPxX(0);
+        fctx.fillStyle = leftEzTeam.primary;
+        fctx.fillRect(fieldL, fieldT, ezW, fieldPxH);
+        fctx.fillStyle = rightEzTeam.primary;
+        fctx.fillRect(toPxX(110), fieldT, ezW, fieldPxH);
+
+        // End zone team text
+        fctx.save();
+        fctx.fillStyle = 'rgba(255,255,255,0.88)';
+        fctx.font = `bold ${Math.max(12, Math.floor(ezW * 0.34))}px "Comic Sans MS", "Comic Neue", cursive, sans-serif`;
+        fctx.textAlign = 'center';
+        fctx.textBaseline = 'middle';
+        fctx.translate(fieldL + ezW / 2, fieldT + fieldPxH / 2);
+        fctx.rotate(-Math.PI / 2);
+        fctx.fillText(leftEzTeam.name, 0, 0);
+        fctx.restore();
+
+        fctx.save();
+        fctx.fillStyle = 'rgba(255,255,255,0.88)';
+        fctx.font = `bold ${Math.max(12, Math.floor(ezW * 0.34))}px "Comic Sans MS", "Comic Neue", cursive, sans-serif`;
+        fctx.textAlign = 'center';
+        fctx.textBaseline = 'middle';
+        fctx.translate(toPxX(110) + ezW / 2, fieldT + fieldPxH / 2);
+        fctx.rotate(Math.PI / 2);
+        fctx.fillText(rightEzTeam.name, 0, 0);
+        fctx.restore();
+
+        // Yard lines (every 5 yards) & Hash Marks
+        fctx.strokeStyle = 'rgba(255,255,255,0.75)';
+        fctx.lineWidth = 1.5;
+        for (let yd = 10; yd <= 110; yd += 5) {
+          const px = toPxX(yd);
+          fctx.beginPath();
+          fctx.moveTo(px, fieldT);
+          fctx.lineTo(px, fieldB);
+          fctx.stroke();
+
+          // Yard numbers every 10 yards
+          if (yd > 10 && yd < 110 && yd % 10 === 0) {
+            const disp = yd <= 60 ? yd - 10 : 110 - yd;
+            fctx.fillStyle = 'rgba(255,255,255,0.78)';
+            fctx.font = `bold ${Math.max(10, Math.floor(fieldPxH * 0.032))}px "Comic Sans MS", "Comic Neue", cursive, sans-serif`;
+            fctx.textAlign = 'center';
+            fctx.fillText(String(disp), px, fieldT + fieldPxH * 0.12);
+            fctx.fillText(String(disp), px, fieldB - fieldPxH * 0.09);
+          }
+        }
+
+        // Single-yard boundary markers (ticks) between every 5-yard line along top & bottom sidelines
+        const tickLen = Math.max(5, Math.round(fieldPxH * 0.022));
+        fctx.strokeStyle = 'rgba(255,255,255,0.82)';
+        fctx.lineWidth = 1.25;
+        for (let yd = 11; yd < 110; yd += 1) {
+          if (yd % 5 === 0) continue;
+          const px = toPxX(yd);
+          fctx.beginPath();
+          fctx.moveTo(px, fieldT);
+          fctx.lineTo(px, fieldT + tickLen);
+          fctx.moveTo(px, fieldB - tickLen);
+          fctx.lineTo(px, fieldB);
+          fctx.stroke();
+        }
+
+        window.__staticFieldCache = { canvas: offCanvas, key: cacheKey };
       }
+      ctx.drawImage(window.__staticFieldCache.canvas, 0, 0);
 
       // Line of Scrimmage (Blue) & First Down Marker (Gold)
       if (match) {
@@ -8184,19 +8255,17 @@ function ensureCareerSeasonIntegrity() {
       else switchScreen('screen-title');
     });
 
-    // Virtual Thumbstick & Touch Action Controls
+    // Floating Virtual Thumbstick & Quick-Pass Touch Action Controls
     const joyZoneEl = document.getElementById('touch-joystick-zone');
     const joyBaseEl = document.getElementById('touch-joystick-base');
     const joyKnobEl = document.getElementById('touch-joystick-knob');
 
     function updateThumbstickFromEvent(e) {
       if (!joyBaseEl || !joyKnobEl) return;
-      const rect = joyBaseEl.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      const maxRadius = Math.max(24, rect.width * 0.42);
-      const dx = e.clientX - centerX;
-      const dy = e.clientY - centerY;
+      const baseRect = joyBaseEl.getBoundingClientRect();
+      const maxRadius = Math.max(24, baseRect.width * 0.42);
+      const dx = e.clientX - touchJoystick.originX;
+      const dy = e.clientY - touchJoystick.originY;
       const dist = Math.hypot(dx, dy);
       const clampedDist = Math.min(maxRadius, dist);
       const angle = dist > 0 ? Math.atan2(dy, dx) : 0;
@@ -8224,6 +8293,22 @@ function ensureCareerSeasonIntegrity() {
         touchJoystick.pointerId = e.pointerId;
         touchJoystick.active = true;
         try { joyZoneEl.setPointerCapture(e.pointerId); } catch {}
+
+        // Center the floating stick base on the user's thumb touchdown (clamped inside zone)
+        if (joyZoneEl && joyBaseEl) {
+          const zoneRect = joyZoneEl.getBoundingClientRect();
+          const zoneCx = zoneRect.left + zoneRect.width / 2;
+          const zoneCy = zoneRect.top + zoneRect.height / 2;
+          const maxShift = 26;
+          const offX = Math.max(-maxShift, Math.min(maxShift, e.clientX - zoneCx));
+          const offY = Math.max(-maxShift, Math.min(maxShift, e.clientY - zoneCy));
+          joyBaseEl.style.transform = `translate3d(${offX.toFixed(1)}px, ${offY.toFixed(1)}px, 0)`;
+          touchJoystick.originX = zoneCx + offX;
+          touchJoystick.originY = zoneCy + offY;
+        } else {
+          touchJoystick.originX = e.clientX;
+          touchJoystick.originY = e.clientY;
+        }
         updateThumbstickFromEvent(e);
       });
       joyZoneEl.addEventListener('pointermove', (e) => {
@@ -8240,6 +8325,7 @@ function ensureCareerSeasonIntegrity() {
         touchJoystick.pointerId = null;
         touchJoystick.vx = 0;
         touchJoystick.vy = 0;
+        if (joyBaseEl) joyBaseEl.style.transform = 'translate3d(0, 0, 0)';
         if (joyKnobEl) joyKnobEl.style.transform = 'translate3d(0, 0, 0)';
       };
       joyZoneEl.addEventListener('pointerup', releaseStick);
@@ -8251,6 +8337,17 @@ function ensureCareerSeasonIntegrity() {
     if (mobileControlsEl) {
       mobileControlsEl.addEventListener('pointerdown', (e) => e.stopPropagation());
     }
+
+    document.querySelectorAll('.touch-pass-btn').forEach(btn => {
+      btn.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!match || match.possession !== 'USER' || match.phase !== 'PASS_DROPBACK') return;
+        const idx = parseInt(btn.getAttribute('data-pass-idx') || '-1', 10);
+        const rec = match.players.find(p => p.side === 'OFF' && p.isEligible && p.num === idx + 2);
+        if (rec) passToReceiver(rec);
+      });
+    });
 
     const turboBtn = document.getElementById('btn-turbo');
     turboBtn.addEventListener('pointerdown', (e) => {
