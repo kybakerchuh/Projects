@@ -8406,6 +8406,23 @@ function ensureCareerSeasonIntegrity() {
 
     canvas.addEventListener('pointerdown', (e) => {
       if (!match) return;
+
+      const isMobileTapSnap =
+        e.pointerType === 'touch' ||
+        (typeof window.matchMedia === 'function' &&
+          window.matchMedia('(pointer: coarse), (max-width: 768px), (max-height: 540px)').matches);
+
+      if (isMobileTapSnap && match.possession === 'USER' && match.phase === 'PRESNAP') {
+        e.preventDefault();
+        hikeBall();
+        return;
+      }
+      if (isMobileTapSnap && match.possession === 'CPU' && match.phase === 'DEF_PRESNAP') {
+        e.preventDefault();
+        snapCpuOffenseBall();
+        return;
+      }
+
       const rect = canvas.getBoundingClientRect();
       const clickX = e.clientX - rect.left;
       const clickY = e.clientY - rect.top;
