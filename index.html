@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Gridiron Dynasty '92 — 16-Bit Pro Football &amp; Franchise Manager</title>
   <meta name="description" content="16-Bit Pro Football & Franchise Manager" />
   <meta property="og:title" content="Gridiron Dynasty '92" />
@@ -16,17 +16,20 @@
       box-sizing: border-box;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
+      height: 100dvh;
       background-color: #090d16;
       color: #f8fafc;
       font-family: 'Comic Sans MS', 'Comic Neue', cursive, sans-serif;
       font-weight: 700;
       overflow: hidden;
+      overscroll-behavior: none;
       touch-action: manipulation;
     }
 
@@ -112,6 +115,51 @@
       #screen-hub .sm\:text-sm       { font-size: 1.45rem !important; line-height: 1.48 !important; }
       #screen-hub .sm\:text-base     { font-size: 1.62rem !important; line-height: 1.5 !important; }
     }
+    @media (max-width: 639px) {
+      #screen-hub .hub-tab {
+        font-size: 0.68rem !important;
+        line-height: 1.15 !important;
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+      }
+    }
+
+    /* Mobile Thumbstick & Touch Field Controls */
+    #game-canvas,
+    #touch-joystick-zone,
+    #mobile-controls {
+      touch-action: none;
+    }
+    .touch-joystick-base {
+      width: 112px;
+      height: 112px;
+      border-radius: 9999px;
+      background: rgba(9, 13, 22, 0.52);
+      border: 3px solid rgba(250, 204, 21, 0.72);
+      box-shadow: 0 0 0 2px rgba(9, 13, 22, 0.7), inset 0 0 14px rgba(0, 0, 0, 0.55);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .touch-joystick-knob {
+      width: 48px;
+      height: 48px;
+      border-radius: 9999px;
+      background: rgba(250, 204, 21, 0.9);
+      border: 3px solid #090d16;
+      box-shadow: inset -2px -2px 0 rgba(0, 0, 0, 0.35), inset 2px 2px 0 rgba(255, 255, 255, 0.45);
+      transform: translate3d(0, 0, 0);
+      pointer-events: none;
+    }
+    #mobile-portrait-hint {
+      display: none;
+    }
+    @media (max-width: 639px) and (orientation: portrait) {
+      #mobile-portrait-hint:not(.hint-dismissed) {
+        display: flex;
+      }
+    }
   </style>
 </head>
 <body class="w-full h-full overflow-hidden relative">
@@ -126,45 +174,48 @@
   <!-- =========================================================
        SCREEN 1: RETRO TITLE SCREEN
        ========================================================= -->
-  <div id="screen-title" class="w-full h-full flex flex-col items-center justify-between p-5 sm:p-8 lg:p-10 bg-gradient-to-b from-[#0a1628] via-[#0e2a1e] to-[#08121e] relative overflow-y-auto">
-    <div class="w-full max-w-6xl flex items-center justify-between text-xs sm:text-sm lg:text-base text-slate-300 z-20">
+  <div id="screen-title" class="w-full h-full flex flex-col items-center justify-between p-3 sm:p-8 lg:p-10 bg-gradient-to-b from-[#0a1628] via-[#0e2a1e] to-[#08121e] relative overflow-y-auto">
+    <div class="w-full max-w-6xl flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm lg:text-base text-slate-300 z-20">
       <span>1992 EDITION &bull; 32 TEAMS</span>
-      <button id="btn-sound-toggle" class="pixel-btn btn-slate px-4 py-2 text-xs sm:text-sm">SFX: ON</button>
+      <div class="flex items-center gap-2">
+        <button id="btn-touch-toggle" class="pixel-btn btn-slate px-3 sm:px-4 py-2 text-[10px] sm:text-sm">PAD: AUTO</button>
+        <button id="btn-sound-toggle" class="pixel-btn btn-slate px-3 sm:px-4 py-2 text-[10px] sm:text-sm">SFX: ON</button>
+      </div>
     </div>
 
-    <div class="flex flex-col items-center text-center my-auto z-20 px-4 w-full max-w-5xl">
-      <div class="pixel-box-gold px-5 py-2 text-xs sm:text-sm lg:text-base text-yellow-300 mb-5 sm:mb-6">
+    <div class="flex flex-col items-center text-center my-auto z-20 px-2 sm:px-4 w-full max-w-5xl py-3">
+      <div class="pixel-box-gold px-4 sm:px-5 py-1.5 sm:py-2 text-[10px] sm:text-sm lg:text-base text-yellow-300 mb-3 sm:mb-6">
         16-BIT PRO FOOTBALL &amp; DYNASTY SIM
       </div>
 
-      <h1 class="text-4xl sm:text-6xl md:text-7xl lg:text-8xl text-yellow-400 drop-shadow-[0_6px_0_#991b1b] leading-tight mb-5 sm:mb-6">
+      <h1 class="text-3xl sm:text-6xl md:text-7xl lg:text-8xl text-yellow-400 drop-shadow-[0_6px_0_#991b1b] leading-tight mb-3 sm:mb-6">
         GRIDIRON<br/>DYNASTY '92
       </h1>
 
-      <p class="text-xs sm:text-base lg:text-lg text-emerald-300 max-w-3xl leading-relaxed mb-7 sm:mb-9">
+      <p class="text-[11px] sm:text-base lg:text-lg text-emerald-300 max-w-3xl leading-relaxed mb-5 sm:mb-9">
         32 NFL FRANCHISES &bull; MULTI-SEASON DYNASTY MODE &bull; ROOKIE DRAFT &bull; 11-ON-11 OFFENSE &amp; PLAYABLE DEFENSE
       </p>
 
       <!-- Difficulty Selector -->
-      <div class="pixel-box p-4 sm:p-6 mb-6 sm:mb-8 w-full max-w-2xl">
-        <div class="text-xs sm:text-sm lg:text-base text-slate-200 mb-3 sm:mb-4">DIFFICULTY LEVEL</div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <button data-diff="ROOKIE" class="diff-btn pixel-btn btn-slate py-3 sm:py-3.5 text-xs sm:text-sm lg:text-base">ROOKIE</button>
-          <button data-diff="PRO" class="diff-btn pixel-btn btn-gold py-3 sm:py-3.5 text-xs sm:text-sm lg:text-base">PRO</button>
-          <button data-diff="ALL_PRO" class="diff-btn pixel-btn btn-slate py-3 sm:py-3.5 text-xs sm:text-sm lg:text-base">ALL-PRO</button>
-          <button data-diff="ALL_MADDEN" class="diff-btn pixel-btn btn-slate py-3 sm:py-3.5 text-xs sm:text-sm lg:text-base">ALL-MADDEN</button>
+      <div class="pixel-box p-3 sm:p-6 mb-4 sm:mb-8 w-full max-w-2xl">
+        <div class="text-xs sm:text-sm lg:text-base text-slate-200 mb-2.5 sm:mb-4">DIFFICULTY LEVEL</div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
+          <button data-diff="ROOKIE" class="diff-btn pixel-btn btn-slate py-2.5 sm:py-3.5 text-xs sm:text-sm lg:text-base">ROOKIE</button>
+          <button data-diff="PRO" class="diff-btn pixel-btn btn-gold py-2.5 sm:py-3.5 text-xs sm:text-sm lg:text-base">PRO</button>
+          <button data-diff="ALL_PRO" class="diff-btn pixel-btn btn-slate py-2.5 sm:py-3.5 text-xs sm:text-sm lg:text-base">ALL-PRO</button>
+          <button data-diff="ALL_MADDEN" class="diff-btn pixel-btn btn-slate py-2.5 sm:py-3.5 text-xs sm:text-sm lg:text-base">ALL-MADDEN</button>
         </div>
       </div>
 
       <!-- Main Action Buttons -->
-      <div class="flex flex-col sm:flex-row gap-4 sm:gap-5 w-full max-w-2xl">
-        <button id="btn-new-career" class="pixel-btn btn-green flex-1 py-4 sm:py-5 px-6 text-sm sm:text-base lg:text-lg">
+      <div class="flex flex-col sm:flex-row gap-3 sm:gap-5 w-full max-w-2xl">
+        <button id="btn-new-career" class="pixel-btn btn-green flex-1 py-3.5 sm:py-5 px-6 text-sm sm:text-base lg:text-lg">
           NEW DYNASTY
         </button>
-        <button id="btn-continue-career" class="pixel-btn btn-blue flex-1 py-4 sm:py-5 px-6 text-sm sm:text-base lg:text-lg">
+        <button id="btn-continue-career" class="pixel-btn btn-blue flex-1 py-3.5 sm:py-5 px-6 text-sm sm:text-base lg:text-lg">
           CONTINUE
         </button>
-        <button id="btn-quick-play" class="pixel-btn btn-gold flex-1 py-4 sm:py-5 px-6 text-sm sm:text-base lg:text-lg">
+        <button id="btn-quick-play" class="pixel-btn btn-gold flex-1 py-3.5 sm:py-5 px-6 text-sm sm:text-base lg:text-lg">
           QUICK PLAY
         </button>
       </div>
@@ -179,8 +230,8 @@
       </div>
     </div>
 
-    <div class="z-20 text-[10px] sm:text-xs lg:text-sm text-slate-300 text-center max-w-5xl">
-      WASD/ARROWS: MOVE &bull; SHIFT: TURBO &bull; TAP RECEIVER [1-5] OR CLICK OPEN SPOT TO PASS &bull; SPACE: JUKE/TACKLE
+    <div class="z-20 text-[10px] sm:text-xs lg:text-sm text-slate-300 text-center max-w-5xl pb-1">
+      WASD/ARROWS OR THUMBSTICK: MOVE &bull; SHIFT/TURBO: SPRINT &bull; TAP RECEIVER [1-5] OR FIELD TO PASS &bull; SPACE/BUTTONS: SCRAMBLE/JUKE/TACKLE
     </div>
   </div>
 
@@ -231,14 +282,14 @@
         </div>
       </div>
 
-      <div class="flex items-center gap-2 sm:gap-3 text-[8px] sm:text-[10px]">
-        <div class="pixel-box px-2.5 py-1.5 text-emerald-400">
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-3 text-[8px] sm:text-[10px]">
+        <div class="pixel-box px-2 py-1 sm:px-2.5 sm:py-1.5 text-emerald-400">
           CC: <span id="hub-cc">25</span>
         </div>
-        <div id="hub-cap-badge" class="pixel-box px-2.5 py-1.5 text-sky-300">
+        <div id="hub-cap-badge" class="pixel-box px-2 py-1 sm:px-2.5 sm:py-1.5 text-sky-300">
           CAP: $<span id="hub-cap">42</span>M
         </div>
-        <div id="hub-roster-badge" class="pixel-box px-2.5 py-1.5 text-yellow-300">
+        <div id="hub-roster-badge" class="pixel-box px-2 py-1 sm:px-2.5 sm:py-1.5 text-yellow-300">
           ROSTER: <span id="hub-roster-count">34/34</span>
         </div>
         <button id="btn-hub-save" class="pixel-btn btn-green px-2.5 py-1.5 text-[8px]">SAVE</button>
@@ -247,28 +298,28 @@
     </div>
 
     <div class="grid grid-cols-5 bg-slate-950 border-b-4 border-slate-800">
-      <button data-hubtab="office" class="hub-tab pixel-btn btn-gold py-2.5 text-[8px] sm:text-[10px] rounded-none">FRONT OFFICE</button>
-      <button data-hubtab="roster" class="hub-tab pixel-btn btn-slate py-2.5 text-[8px] sm:text-[10px] rounded-none">ROSTER &amp; DEPTH</button>
-      <button data-hubtab="freeagents" class="hub-tab pixel-btn btn-slate py-2.5 text-[8px] sm:text-[10px] rounded-none">FREE AGENTS</button>
-      <button data-hubtab="standings" class="hub-tab pixel-btn btn-slate py-2.5 text-[8px] sm:text-[10px] rounded-none">LEAGUE</button>
-      <button data-hubtab="draft" class="hub-tab pixel-btn btn-slate py-2.5 text-[8px] sm:text-[10px] rounded-none">DRAFT</button>
+      <button data-hubtab="office" class="hub-tab pixel-btn btn-gold py-2 sm:py-2.5 text-[8px] sm:text-[10px] rounded-none">OFFICE</button>
+      <button data-hubtab="roster" class="hub-tab pixel-btn btn-slate py-2 sm:py-2.5 text-[8px] sm:text-[10px] rounded-none">ROSTER</button>
+      <button data-hubtab="freeagents" class="hub-tab pixel-btn btn-slate py-2 sm:py-2.5 text-[8px] sm:text-[10px] rounded-none">FREE AGENTS</button>
+      <button data-hubtab="standings" class="hub-tab pixel-btn btn-slate py-2 sm:py-2.5 text-[8px] sm:text-[10px] rounded-none">LEAGUE</button>
+      <button data-hubtab="draft" class="hub-tab pixel-btn btn-slate py-2 sm:py-2.5 text-[8px] sm:text-[10px] rounded-none">DRAFT</button>
     </div>
 
-    <div id="hub-content" class="flex-1 overflow-y-auto p-3 sm:p-5"></div>
+    <div id="hub-content" class="flex-1 overflow-y-auto p-2.5 sm:p-5"></div>
   </div>
 
   <!-- =========================================================
        SCREEN 4: LIVE ARCADE FOOTBALL MATCH (CANVAS + HUD)
        ========================================================= -->
   <div id="screen-game" class="hidden w-full h-full flex flex-col bg-[#082f15] relative">
-    <!-- Top Scoreboard & Live Stat Tracker HUD (1.2x Height + Dual-Team Live Stat Trackers) -->
-    <div id="top-scoreboard-hud" class="bg-slate-950 border-b-4 border-yellow-400 px-3 sm:px-5 py-3.5 min-h-[68px] sm:min-h-[76px] grid grid-cols-3 items-center gap-2 z-20 text-xs sm:text-sm">
+    <!-- Top Scoreboard & Live Stat Tracker HUD -->
+    <div id="top-scoreboard-hud" class="bg-slate-950 border-b-4 border-yellow-400 px-2 sm:px-5 py-1.5 sm:py-3.5 min-h-[52px] sm:min-h-[76px] grid grid-cols-3 items-center gap-1 sm:gap-2 z-20 text-[11px] sm:text-sm">
       <!-- Left: Away Team Score + Live Stat Tracker -->
-      <div class="flex items-center justify-start gap-2.5 sm:gap-3.5 min-w-0">
-        <div class="flex items-center gap-2 shrink-0">
-          <div id="hud-away-color" class="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white bg-red-600"></div>
-          <span id="hud-away-name" class="text-slate-200 font-bold text-sm sm:text-base">CPU</span>
-          <span id="hud-away-score" class="text-yellow-400 text-base sm:text-xl font-bold">0</span>
+      <div class="flex items-center justify-start gap-1.5 sm:gap-3.5 min-w-0">
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <div id="hud-away-color" class="w-3.5 h-3.5 sm:w-5 sm:h-5 border-2 border-white bg-red-600"></div>
+          <span id="hud-away-name" class="text-slate-200 font-bold text-xs sm:text-base">CPU</span>
+          <span id="hud-away-score" class="text-yellow-400 text-sm sm:text-xl font-bold">0</span>
         </div>
         <div id="hud-away-leaders" class="hidden sm:flex flex-col text-[10px] lg:text-xs leading-tight text-slate-300 border-l-2 border-slate-700 pl-2.5 truncate">
           <span class="text-sky-300 truncate">PASS: -- 0 YDS, 0 TD, 0 INT</span>
@@ -278,24 +329,24 @@
 
       <!-- Center: Down & Distance + Quarter & Game Clock -->
       <div class="flex flex-col items-center justify-center text-center">
-        <div id="hud-down-dist" class="text-yellow-300 text-xs sm:text-base font-bold tracking-wide">1ST &amp; 10 &bull; OWN 25</div>
-        <div id="hud-clock" class="text-emerald-400 text-[11px] sm:text-sm mt-0.5">Q1 &bull; 02:00</div>
+        <div id="hud-down-dist" class="text-yellow-300 text-[10px] sm:text-base font-bold tracking-wide leading-tight">1ST &amp; 10 &bull; OWN 25</div>
+        <div id="hud-clock" class="text-emerald-400 text-[10px] sm:text-sm mt-0.5 leading-tight">Q1 &bull; 02:00</div>
       </div>
 
       <!-- Right: Home Team Live Stat Tracker + Score + Action Buttons -->
-      <div class="flex items-center justify-end gap-2 sm:gap-3 min-w-0">
+      <div class="flex items-center justify-end gap-1.5 sm:gap-3 min-w-0">
         <div id="hud-home-leaders" class="hidden sm:flex flex-col text-right text-[10px] lg:text-xs leading-tight text-slate-300 border-r-2 border-slate-700 pr-2.5 truncate">
           <span class="text-sky-300 truncate">PASS: -- 0 YDS, 0 TD, 0 INT</span>
           <span class="text-emerald-300 truncate">REC: -- 0 YDS &bull; RUSH: -- 0 YDS</span>
         </div>
-        <div class="flex items-center gap-2 shrink-0">
-          <span id="hud-home-score" class="text-yellow-400 text-base sm:text-xl font-bold">0</span>
-          <span id="hud-home-name" class="text-slate-200 font-bold text-sm sm:text-base">YOU</span>
-          <div id="hud-home-color" class="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white bg-blue-600"></div>
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <span id="hud-home-score" class="text-yellow-400 text-sm sm:text-xl font-bold">0</span>
+          <span id="hud-home-name" class="text-slate-200 font-bold text-xs sm:text-base">YOU</span>
+          <div id="hud-home-color" class="w-3.5 h-3.5 sm:w-5 sm:h-5 border-2 border-white bg-blue-600"></div>
         </div>
-        <div class="flex items-center gap-1.5 shrink-0 ml-1">
-          <button id="btn-boxscore" class="pixel-btn btn-blue px-2.5 py-2 text-[10px] sm:text-xs">STATS</button>
-          <button id="btn-pause-game" class="pixel-btn btn-slate px-2.5 py-2 text-[10px] sm:text-xs">QUIT</button>
+        <div class="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-0.5 sm:ml-1">
+          <button id="btn-boxscore" class="pixel-btn btn-blue px-2 sm:px-2.5 py-1.5 sm:py-2 text-[9px] sm:text-xs">STATS</button>
+          <button id="btn-pause-game" class="pixel-btn btn-slate px-2 sm:px-2.5 py-1.5 sm:py-2 text-[9px] sm:text-xs">QUIT</button>
         </div>
       </div>
     </div>
@@ -303,6 +354,12 @@
     <!-- Field Canvas Container -->
     <div id="canvas-wrap" class="relative flex-1 w-full overflow-hidden">
       <canvas id="game-canvas" class="block w-full h-full"></canvas>
+
+      <!-- Dismissible Mobile Portrait Orientation Hint -->
+      <div id="mobile-portrait-hint" class="absolute top-2 left-1/2 -translate-x-1/2 z-20 pixel-box bg-slate-950/90 px-3 py-1.5 items-center gap-2 text-[9px] text-yellow-300 whitespace-nowrap">
+        <span>ROTATE PHONE TO LANDSCAPE FOR BEST VIEW</span>
+        <button id="btn-dismiss-portrait-hint" class="pixel-btn btn-slate px-1.5 py-0.5 text-[9px]">X</button>
+      </div>
 
       <!-- On-Field Action Banner -->
       <div id="field-banner" class="hidden absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none z-20">
@@ -312,13 +369,13 @@
       </div>
 
       <!-- Offensive Playbook Selection Overlay -->
-      <div id="overlay-playcall" class="hidden absolute inset-x-0 bottom-0 bg-slate-950/95 border-t-4 border-yellow-400 p-3 sm:p-4 z-30">
-        <div class="w-full flex flex-col lg:flex-row items-stretch gap-3 sm:gap-4">
+      <div id="overlay-playcall" class="hidden absolute inset-x-0 bottom-0 max-h-[78dvh] overflow-y-auto bg-slate-950/95 border-t-4 border-yellow-400 p-2.5 sm:p-4 z-30">
+        <div class="w-full flex flex-col lg:flex-row items-stretch gap-2.5 sm:gap-4">
           <!-- Left Info & Controls Column (In Front of Play Boxes) -->
-          <div class="lg:w-64 xl:w-72 shrink-0 flex flex-col justify-between gap-2.5 bg-slate-900/90 border-2 border-slate-700 p-3">
-            <div class="space-y-2">
-              <div id="playcall-situation" class="text-xs sm:text-sm text-yellow-400 leading-snug">1ST &amp; 10 &bull; SELECT FORMATION:</div>
-              <div id="playcall-def-hint" class="text-[10px] sm:text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-600 text-sky-300">DEF: 2-HIGH ZONE</div>
+          <div class="lg:w-64 xl:w-72 shrink-0 flex flex-col justify-between gap-2 bg-slate-900/90 border-2 border-slate-700 p-2.5 sm:p-3">
+            <div class="space-y-1.5 sm:space-y-2">
+              <div id="playcall-situation" class="text-[11px] sm:text-sm text-yellow-400 leading-snug">1ST &amp; 10 &bull; SELECT FORMATION:</div>
+              <div id="playcall-def-hint" class="text-[10px] sm:text-xs px-2 sm:px-2.5 py-1 sm:py-1.5 bg-slate-950 border border-slate-600 text-sky-300">DEF: 2-HIGH ZONE</div>
             </div>
 
             <div class="flex flex-col gap-2">
@@ -329,33 +386,33 @@
               </div>
             </div>
 
-            <div id="playcall-footer" class="text-[9px] sm:text-[10px] text-slate-300 leading-snug border-t border-slate-800 pt-2">
-              CLICK A FORMATION CARD TO VIEW ITS PLAYS
+            <div id="playcall-footer" class="text-[9px] sm:text-[10px] text-slate-300 leading-snug border-t border-slate-800 pt-1.5 sm:pt-2">
+              TAP A FORMATION CARD TO VIEW ITS PLAYS
             </div>
           </div>
 
           <!-- Taller & Wider 5-Card Formation / Play Grid with Edge Scroll Arrows -->
           <div class="relative flex-1 flex items-stretch">
             <button id="btn-off-scroll-left" title="Scroll Left [A]" class="hidden pixel-btn btn-gold px-2 sm:px-2.5 text-sm sm:text-base font-bold mr-1.5 shrink-0">&larr;</button>
-            <div id="playcall-options" class="flex-1 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3"></div>
+            <div id="playcall-options" class="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3"></div>
             <button id="btn-off-scroll-right" title="Scroll Right [D]" class="hidden pixel-btn btn-gold px-2 sm:px-2.5 text-sm sm:text-base font-bold ml-1.5 shrink-0">&rarr;</button>
           </div>
         </div>
       </div>
 
       <!-- Interactive Defensive Playbook Overlay -->
-      <div id="overlay-def-playcall" class="hidden absolute inset-x-0 bottom-0 bg-slate-950/95 border-t-4 border-sky-400 p-3 sm:p-4 z-30">
-        <div class="w-full flex flex-col lg:flex-row items-stretch gap-3 sm:gap-4">
+      <div id="overlay-def-playcall" class="hidden absolute inset-x-0 bottom-0 max-h-[78dvh] overflow-y-auto bg-slate-950/95 border-t-4 border-sky-400 p-2.5 sm:p-4 z-30">
+        <div class="w-full flex flex-col lg:flex-row items-stretch gap-2.5 sm:gap-4">
           <!-- Left Info & Controls Column (In Front of Play Boxes) -->
-          <div class="lg:w-64 xl:w-72 shrink-0 flex flex-col justify-between gap-2.5 bg-slate-900/90 border-2 border-slate-700 p-3">
-            <div id="def-playcall-situation" class="text-xs sm:text-sm text-sky-300 leading-snug">DEFENSE &bull; 1ST &amp; 10 &bull; SELECT FORMATION:</div>
+          <div class="lg:w-64 xl:w-72 shrink-0 flex flex-col justify-between gap-2 bg-slate-900/90 border-2 border-slate-700 p-2.5 sm:p-3">
+            <div id="def-playcall-situation" class="text-[11px] sm:text-sm text-sky-300 leading-snug">DEFENSE &bull; 1ST &amp; 10 &bull; SELECT FORMATION:</div>
 
             <div class="flex flex-col gap-2">
               <button id="btn-def-back-formations" class="hidden pixel-btn bg-sky-400 text-black w-full py-2 text-[10px] sm:text-xs">&larr; FORMATIONS</button>
               <button id="btn-sim-def-drive" class="pixel-btn btn-slate w-full py-2 text-[10px] sm:text-xs">SIM CPU DRIVE</button>
             </div>
 
-            <div id="def-playcall-footer" class="text-[9px] sm:text-[10px] text-slate-300 leading-snug border-t border-slate-800 pt-2">
+            <div id="def-playcall-footer" class="text-[9px] sm:text-[10px] text-slate-300 leading-snug border-t border-slate-800 pt-1.5 sm:pt-2">
               CHOOSE A DEFENSIVE LINEUP (3-4, 4-3, NICKEL, DIME, PREVENT)
             </div>
           </div>
@@ -363,28 +420,28 @@
           <!-- Taller & Wider 5-Card Defensive Formation / Play Grid with Edge Scroll Arrows -->
           <div class="relative flex-1 flex items-stretch">
             <button id="btn-def-scroll-left" title="Scroll Left [A]" class="hidden pixel-btn bg-sky-400 text-black px-2 sm:px-2.5 text-sm sm:text-base font-bold mr-1.5 shrink-0">&larr;</button>
-            <div id="def-playcall-options" class="flex-1 grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3"></div>
+            <div id="def-playcall-options" class="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3"></div>
             <button id="btn-def-scroll-right" title="Scroll Right [D]" class="hidden pixel-btn bg-sky-400 text-black px-2 sm:px-2.5 text-sm sm:text-base font-bold ml-1.5 shrink-0">&rarr;</button>
           </div>
         </div>
       </div>
 
       <!-- Pre-Snap Hike Bar (Defense stays frozen until HIKE) -->
-      <div id="overlay-presnap" class="hidden absolute inset-x-0 bottom-3 flex flex-col items-center gap-2 z-30 px-3">
-        <div class="pixel-box bg-slate-950/95 px-4 py-2.5 flex flex-wrap items-center justify-center gap-3">
+      <div id="overlay-presnap" class="hidden absolute inset-x-0 bottom-3 flex flex-col items-center gap-2 z-30 px-2 sm:px-3">
+        <div class="pixel-box bg-slate-950/95 px-3 sm:px-4 py-2 sm:py-2.5 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
           <span id="presnap-play-name" class="text-[9px] sm:text-xs text-yellow-300">PLAY: SLANT FLATS</span>
-          <button id="btn-audible" class="pixel-btn btn-slate px-3 py-2 text-[8px] sm:text-[10px]">AUDIBLE</button>
-          <button id="btn-hike" class="pixel-btn btn-green px-5 py-2 text-[10px] sm:text-xs">HIKE BALL [SPACE]</button>
+          <button id="btn-audible" class="pixel-btn btn-slate px-3 py-2 text-[9px] sm:text-[10px]">AUDIBLE</button>
+          <button id="btn-hike" class="pixel-btn btn-green px-4 sm:px-5 py-2 text-[10px] sm:text-xs">HIKE BALL [SPACE]</button>
         </div>
       </div>
 
       <!-- Defensive Pre-Snap Ready Bar (Switch Defender & Align Before Snap) -->
-      <div id="overlay-def-presnap" class="hidden absolute inset-x-0 bottom-3 flex flex-col items-center gap-2 z-30 px-3">
-        <div class="pixel-box bg-slate-950/95 px-4 py-2.5 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 border-sky-400">
-          <span id="def-presnap-play-name" class="text-[8px] sm:text-xs text-sky-300">DEF: COVER 2 ZONE</span>
-          <button id="btn-def-presnap-switch" class="pixel-btn btn-blue px-3 py-2 text-[8px] sm:text-[10px]">SWITCH DEF [Q]</button>
-          <button id="btn-def-audible" class="pixel-btn btn-slate px-3 py-2 text-[8px] sm:text-[10px]">AUDIBLE</button>
-          <button id="btn-def-hike" class="pixel-btn btn-green px-5 py-2 text-[9px] sm:text-xs">READY / SNAP [SPACE]</button>
+      <div id="overlay-def-presnap" class="hidden absolute inset-x-0 bottom-3 flex flex-col items-center gap-2 z-30 px-2 sm:px-3">
+        <div class="pixel-box bg-slate-950/95 px-3 sm:px-4 py-2 sm:py-2.5 flex flex-wrap items-center justify-center gap-2 sm:gap-3 border-sky-400">
+          <span id="def-presnap-play-name" class="text-[9px] sm:text-xs text-sky-300">DEF: COVER 2 ZONE</span>
+          <button id="btn-def-presnap-switch" class="pixel-btn btn-blue px-3 py-2 text-[9px] sm:text-[10px]">SWITCH DEF [Q]</button>
+          <button id="btn-def-audible" class="pixel-btn btn-slate px-3 py-2 text-[9px] sm:text-[10px]">AUDIBLE</button>
+          <button id="btn-def-hike" class="pixel-btn btn-green px-4 sm:px-5 py-2 text-[10px] sm:text-xs">READY / SNAP [SPACE]</button>
         </div>
       </div>
 
@@ -412,13 +469,20 @@
         </div>
       </div>
 
+      <!-- Left Virtual Thumbstick (Mobile / Touch Mode) -->
+      <div id="touch-joystick-zone" class="hidden absolute left-3 bottom-3 z-20 w-36 h-36 sm:w-40 sm:h-40 flex items-center justify-center">
+        <div id="touch-joystick-base" class="touch-joystick-base">
+          <div id="touch-joystick-knob" class="touch-joystick-knob"></div>
+        </div>
+      </div>
+
       <!-- In-Game Touch / Quick Action Controls -->
-      <div id="mobile-controls" class="hidden absolute bottom-3 right-3 z-20 flex gap-2">
-        <button id="btn-turbo" class="pixel-btn btn-blue px-4 py-3 text-[10px] opacity-95">TURBO</button>
-        <button id="btn-qb-scramble" class="hidden pixel-btn btn-gold px-4 py-3 text-[10px] opacity-95">SCRAMBLE [SPACE]</button>
-        <button id="btn-juke" class="hidden pixel-btn btn-red px-4 py-3 text-[10px] opacity-95">JUKE!</button>
-        <button id="btn-def-switch" class="hidden pixel-btn btn-slate px-3 py-3 text-[10px] opacity-95">SWITCH</button>
-        <button id="btn-def-tackle" class="hidden pixel-btn btn-red px-4 py-3 text-[10px] opacity-95">TACKLE!</button>
+      <div id="mobile-controls" class="hidden absolute bottom-3 right-3 z-20 flex flex-wrap justify-end gap-2 max-w-[54vw]">
+        <button id="btn-turbo" class="pixel-btn btn-blue px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">TURBO</button>
+        <button id="btn-qb-scramble" class="hidden pixel-btn btn-gold px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">SCRAMBLE</button>
+        <button id="btn-juke" class="hidden pixel-btn btn-red px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">JUKE!</button>
+        <button id="btn-def-switch" class="hidden pixel-btn btn-slate px-3.5 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">SWITCH</button>
+        <button id="btn-def-tackle" class="hidden pixel-btn btn-red px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">TACKLE!</button>
       </div>
 
       <!-- Live In-Game Box Score Modal -->
@@ -1643,11 +1707,15 @@
     }
 
     function switchScreen(screenId) {
+      if (typeof resetTouchControls === 'function') resetTouchControls();
       ['screen-title', 'screen-team-select', 'screen-hub', 'screen-game'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.toggle('hidden', id !== screenId);
       });
-      if (screenId === 'screen-game') resizeCanvas();
+      if (screenId === 'screen-game') {
+        resizeCanvas();
+        setTimeout(resizeCanvas, 60);
+      }
     }
 
     function setUserUniformChoice(choice) {
@@ -5040,10 +5108,11 @@ function ensureCareerSeasonIntegrity() {
       const shellKeys = Object.keys(DEFENSIVE_CONCEPTS);
       match.cpuPreSnapShell = shellKeys[Math.floor(Math.random() * shellKeys.length)];
 
-      ['overlay-def-playcall', 'overlay-presnap', 'overlay-def-presnap', 'overlay-kick', 'overlay-sim', 'mobile-controls'].forEach(id => {
+      ['overlay-def-playcall', 'overlay-presnap', 'overlay-def-presnap', 'overlay-kick', 'overlay-sim', 'mobile-controls', 'touch-joystick-zone'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
       });
+      resetTouchControls();
 
       offPlayStep = 'FORMATION';
       offCarouselIdx = 0;
@@ -5145,10 +5214,11 @@ function ensureCareerSeasonIntegrity() {
       match.ball = null;
       match.ballCarrier = null;
 
-      ['overlay-playcall', 'overlay-presnap', 'overlay-def-presnap', 'overlay-kick', 'overlay-sim', 'mobile-controls'].forEach(id => {
+      ['overlay-playcall', 'overlay-presnap', 'overlay-def-presnap', 'overlay-kick', 'overlay-sim', 'mobile-controls', 'touch-joystick-zone'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
       });
+      resetTouchControls();
 
       defPlayStep = 'FORMATION';
       defCarouselIdx = 0;
@@ -5684,8 +5754,49 @@ function ensureCareerSeasonIntegrity() {
       updateMobileControls();
     }
 
+    let touchPadMode = 'AUTO';
+    try {
+      const savedPadMode = window.localStorage.getItem('gd92_touch_mode');
+      if (savedPadMode === 'AUTO' || savedPadMode === 'ON' || savedPadMode === 'OFF') {
+        touchPadMode = savedPadMode;
+      }
+    } catch {}
+
+    const touchJoystick = {
+      active: false,
+      pointerId: null,
+      vx: 0,
+      vy: 0,
+      deadzone: 0.14
+    };
+
+    function isTouchCapableDevice() {
+      return (
+        (typeof window.matchMedia === 'function' && window.matchMedia('(pointer: coarse)').matches) ||
+        (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) ||
+        'ontouchstart' in window
+      );
+    }
+
+    function shouldShowTouchJoystick() {
+      if (touchPadMode === 'ON') return true;
+      if (touchPadMode === 'OFF') return false;
+      return isTouchCapableDevice();
+    }
+
+    function resetTouchControls() {
+      touchJoystick.active = false;
+      touchJoystick.pointerId = null;
+      touchJoystick.vx = 0;
+      touchJoystick.vy = 0;
+      keys['TURBO'] = false;
+      const knob = document.getElementById('touch-joystick-knob');
+      if (knob) knob.style.transform = 'translate3d(0, 0, 0)';
+    }
+
     function updateMobileControls() {
       const box = document.getElementById('mobile-controls');
+      const joyZone = document.getElementById('touch-joystick-zone');
       const scrambleBtn = document.getElementById('btn-qb-scramble');
       const jukeBtn = document.getElementById('btn-juke');
       const swBtn = document.getElementById('btn-def-switch');
@@ -5694,8 +5805,12 @@ function ensureCareerSeasonIntegrity() {
 
       const isUserLive = match.possession === 'USER' && (match.phase === 'PASS_DROPBACK' || match.phase === 'RUN_PLAY');
       const isDefLive = match.possession === 'CPU' && match.phase === 'DEF_LIVE';
+      const isLive = isUserLive || isDefLive;
 
-      box.classList.toggle('hidden', !isUserLive && !isDefLive);
+      if (!isLive) resetTouchControls();
+
+      box.classList.toggle('hidden', !isLive || touchPadMode === 'OFF');
+      if (joyZone) joyZone.classList.toggle('hidden', !isLive || !shouldShowTouchJoystick());
       if (scrambleBtn) scrambleBtn.classList.toggle('hidden', !(match.possession === 'USER' && match.phase === 'PASS_DROPBACK'));
       if (jukeBtn) jukeBtn.classList.toggle('hidden', !(match.possession === 'USER' && match.phase === 'RUN_PLAY'));
       if (swBtn) swBtn.classList.toggle('hidden', !isDefLive);
@@ -6043,6 +6158,9 @@ function ensureCareerSeasonIntegrity() {
       document.getElementById('overlay-playcall').classList.add('hidden');
       document.getElementById('overlay-presnap').classList.add('hidden');
       document.getElementById('mobile-controls').classList.add('hidden');
+      const joyZoneKick = document.getElementById('touch-joystick-zone');
+      if (joyZoneKick) joyZoneKick.classList.add('hidden');
+      resetTouchControls();
 
       const dir = match.driveDir || 1;
       const targetEz = dir === 1 ? 110 : 10;
@@ -6209,10 +6327,11 @@ function ensureCareerSeasonIntegrity() {
     function finishMatch() {
       if (!match) return;
       match.phase = 'POSTGAME';
-      ['overlay-playcall', 'overlay-def-playcall', 'overlay-presnap', 'overlay-def-presnap', 'overlay-kick', 'overlay-sim', 'mobile-controls'].forEach(id => {
+      ['overlay-playcall', 'overlay-def-playcall', 'overlay-presnap', 'overlay-def-presnap', 'overlay-kick', 'overlay-sim', 'mobile-controls', 'touch-joystick-zone'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.classList.add('hidden');
       });
+      resetTouchControls();
 
       const won = match.userScore >= match.cpuScore;
       if (won) sfx.playTouchdown();
@@ -6547,7 +6666,7 @@ function ensureCareerSeasonIntegrity() {
         userCtrl = match.players.find(p => p.id === match.selectedDefenderId) || match.players.find(p => p.side === 'DEF');
       }
 
-      // Move user-controlled player via WASD / Arrows
+      // Move user-controlled player via WASD / Arrows or Virtual Thumbstick
       if (userCtrl) {
         let vx = 0, vy = 0;
         if (keys['KeyW'] || keys['ArrowUp']) vy -= 1;
@@ -6555,9 +6674,17 @@ function ensureCareerSeasonIntegrity() {
         if (keys['KeyA'] || keys['ArrowLeft']) vx -= 1;
         if (keys['KeyD'] || keys['ArrowRight']) vx += 1;
 
+        if (vx === 0 && vy === 0 && touchJoystick.active) {
+          vx = touchJoystick.vx;
+          vy = touchJoystick.vy;
+        }
+
         if (vx !== 0 || vy !== 0) {
           const len = Math.hypot(vx, vy);
-          vx /= len; vy /= len;
+          if (len > 1) {
+            vx /= len;
+            vy /= len;
+          }
           const mult = hasTurbo ? 1.28 : 1.0;
           const sinceScramble = (match.possession === 'USER' && match.qbScrambleMode) ? (match.playClock - (match.scrambleStartClock || 0)) : 999;
           const scrambleBurst = (match.possession === 'USER' && match.qbScrambleMode && match.phase === 'RUN_PLAY')
@@ -7796,6 +7923,8 @@ function ensureCareerSeasonIntegrity() {
     });
 
     window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 120));
+    window.addEventListener('blur', resetTouchControls);
 
     // Wire UI Buttons
     document.getElementById('btn-sound-toggle').addEventListener('click', () => {
@@ -7803,6 +7932,32 @@ function ensureCareerSeasonIntegrity() {
       document.getElementById('btn-sound-toggle').textContent = `SFX: ${sfx.enabled ? 'ON' : 'OFF'}`;
       sfx.playClick();
     });
+
+    const touchToggleBtn = document.getElementById('btn-touch-toggle');
+    if (touchToggleBtn) {
+      const renderTouchToggleLabel = () => {
+        touchToggleBtn.textContent = `PAD: ${touchPadMode}`;
+        touchToggleBtn.classList.toggle('btn-gold', touchPadMode === 'ON');
+        touchToggleBtn.classList.toggle('btn-slate', touchPadMode !== 'ON');
+      };
+      renderTouchToggleLabel();
+      touchToggleBtn.addEventListener('click', () => {
+        sfx.playClick();
+        const order = ['AUTO', 'ON', 'OFF'];
+        touchPadMode = order[(order.indexOf(touchPadMode) + 1) % order.length];
+        try { window.localStorage.setItem('gd92_touch_mode', touchPadMode); } catch {}
+        renderTouchToggleLabel();
+        updateMobileControls();
+      });
+    }
+
+    const dismissHintBtn = document.getElementById('btn-dismiss-portrait-hint');
+    if (dismissHintBtn) {
+      dismissHintBtn.addEventListener('click', () => {
+        const hintEl = document.getElementById('mobile-portrait-hint');
+        if (hintEl) hintEl.classList.add('hint-dismissed');
+      });
+    }
 
     document.querySelectorAll('.diff-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -8029,25 +8184,107 @@ function ensureCareerSeasonIntegrity() {
       else switchScreen('screen-title');
     });
 
-    // Touch controls
+    // Virtual Thumbstick & Touch Action Controls
+    const joyZoneEl = document.getElementById('touch-joystick-zone');
+    const joyBaseEl = document.getElementById('touch-joystick-base');
+    const joyKnobEl = document.getElementById('touch-joystick-knob');
+
+    function updateThumbstickFromEvent(e) {
+      if (!joyBaseEl || !joyKnobEl) return;
+      const rect = joyBaseEl.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const maxRadius = Math.max(24, rect.width * 0.42);
+      const dx = e.clientX - centerX;
+      const dy = e.clientY - centerY;
+      const dist = Math.hypot(dx, dy);
+      const clampedDist = Math.min(maxRadius, dist);
+      const angle = dist > 0 ? Math.atan2(dy, dx) : 0;
+      const knobX = Math.cos(angle) * clampedDist;
+      const knobY = Math.sin(angle) * clampedDist;
+
+      joyKnobEl.style.transform = `translate3d(${knobX.toFixed(1)}px, ${knobY.toFixed(1)}px, 0)`;
+
+      const normMag = clampedDist / maxRadius;
+      if (normMag < touchJoystick.deadzone) {
+        touchJoystick.vx = 0;
+        touchJoystick.vy = 0;
+      } else {
+        const scaled = (normMag - touchJoystick.deadzone) / (1 - touchJoystick.deadzone);
+        touchJoystick.vx = Math.cos(angle) * scaled;
+        touchJoystick.vy = Math.sin(angle) * scaled;
+      }
+    }
+
+    if (joyZoneEl) {
+      joyZoneEl.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (touchJoystick.pointerId !== null) return;
+        touchJoystick.pointerId = e.pointerId;
+        touchJoystick.active = true;
+        try { joyZoneEl.setPointerCapture(e.pointerId); } catch {}
+        updateThumbstickFromEvent(e);
+      });
+      joyZoneEl.addEventListener('pointermove', (e) => {
+        if (!touchJoystick.active || e.pointerId !== touchJoystick.pointerId) return;
+        e.preventDefault();
+        e.stopPropagation();
+        updateThumbstickFromEvent(e);
+      });
+      const releaseStick = (e) => {
+        if (e.pointerId !== touchJoystick.pointerId) return;
+        e.preventDefault();
+        e.stopPropagation();
+        touchJoystick.active = false;
+        touchJoystick.pointerId = null;
+        touchJoystick.vx = 0;
+        touchJoystick.vy = 0;
+        if (joyKnobEl) joyKnobEl.style.transform = 'translate3d(0, 0, 0)';
+      };
+      joyZoneEl.addEventListener('pointerup', releaseStick);
+      joyZoneEl.addEventListener('pointercancel', releaseStick);
+      joyZoneEl.addEventListener('lostpointercapture', releaseStick);
+    }
+
+    const mobileControlsEl = document.getElementById('mobile-controls');
+    if (mobileControlsEl) {
+      mobileControlsEl.addEventListener('pointerdown', (e) => e.stopPropagation());
+    }
+
     const turboBtn = document.getElementById('btn-turbo');
-    turboBtn.addEventListener('pointerdown', () => { keys['TURBO'] = true; });
+    turboBtn.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      keys['TURBO'] = true;
+    });
     turboBtn.addEventListener('pointerup', () => { keys['TURBO'] = false; });
+    turboBtn.addEventListener('pointercancel', () => { keys['TURBO'] = false; });
     turboBtn.addEventListener('pointerleave', () => { keys['TURBO'] = false; });
 
-    document.getElementById('btn-qb-scramble').addEventListener('click', () => {
+    document.getElementById('btn-qb-scramble').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       activateQbScramble();
     });
 
-    document.getElementById('btn-juke').addEventListener('click', () => {
+    document.getElementById('btn-juke').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       if (match && match.ballCarrier) {
         match.ballCarrier.jukeTimer = 0.45;
         sfx.playClick();
       }
     });
 
-    document.getElementById('btn-def-switch').addEventListener('click', cycleSelectedDefender);
-    document.getElementById('btn-def-tackle').addEventListener('click', () => {
+    document.getElementById('btn-def-switch').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      cycleSelectedDefender();
+    });
+    document.getElementById('btn-def-tackle').addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       if (!match) return;
       const def = match.players.find(p => p.id === match.selectedDefenderId);
       if (def) {
