@@ -352,7 +352,7 @@
       }
       #overlay-presnap > div,
       #overlay-def-presnap > div {
-        padding: 6px 8px !important;
+        padding: 0 !important;
         gap: 6px !important;
         justify-content: flex-end !important;
       }
@@ -462,6 +462,12 @@
       #def-playcall-options > button > div:not(:first-child) {
         font-size: 0.5rem !important;
         line-height: 1.2 !important;
+      }
+
+      /* Mobile Top HUD: Hide inline leader stats between scores and down/distance (STATS button opens full box score) */
+      #hud-away-leaders,
+      #hud-home-leaders {
+        display: none !important;
       }
     }
 
@@ -822,21 +828,21 @@
       </div>
 
       <!-- Pre-Snap Hike Bar (Defense stays frozen until HIKE) -->
-      <div id="overlay-presnap" class="hidden absolute inset-x-0 bottom-3 flex flex-col items-center gap-2 z-30 px-2 sm:px-3">
-        <div class="pixel-box bg-slate-950/95 px-3 sm:px-4 py-2 sm:py-2.5 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-          <span id="presnap-play-name" class="text-[9px] sm:text-xs text-yellow-300">PLAY: SLANT FLATS</span>
-          <button id="btn-audible" class="pixel-btn btn-slate px-3 py-2 text-[9px] sm:text-[10px]">AUDIBLE</button>
-          <button id="btn-hike" class="pixel-btn btn-green px-4 sm:px-5 py-2 text-[10px] sm:text-xs">HIKE BALL [SPACE]</button>
+      <div id="overlay-presnap" class="hidden pointer-events-none absolute inset-x-0 bottom-3 flex flex-col items-center gap-2 z-30 px-2 sm:px-3">
+        <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <span id="presnap-play-name" class="text-[9px] sm:text-xs text-yellow-300 drop-shadow-[0_2px_0_rgba(0,0,0,0.95)]">PLAY: SLANT FLATS</span>
+          <button id="btn-audible" class="pointer-events-auto pixel-btn btn-slate px-3 py-2 text-[9px] sm:text-[10px]">AUDIBLE</button>
+          <button id="btn-hike" class="pointer-events-auto pixel-btn btn-green px-4 sm:px-5 py-2 text-[10px] sm:text-xs">HIKE BALL [SPACE]</button>
         </div>
       </div>
 
       <!-- Defensive Pre-Snap Ready Bar (Switch Defender & Align Before Snap) -->
-      <div id="overlay-def-presnap" class="hidden absolute inset-x-0 bottom-3 flex flex-col items-center gap-2 z-30 px-2 sm:px-3">
-        <div class="pixel-box bg-slate-950/95 px-3 sm:px-4 py-2 sm:py-2.5 flex flex-wrap items-center justify-center gap-2 sm:gap-3 border-sky-400">
-          <span id="def-presnap-play-name" class="text-[9px] sm:text-xs text-sky-300">DEF: COVER 2 ZONE</span>
-          <button id="btn-def-presnap-switch" class="pixel-btn btn-blue px-3 py-2 text-[9px] sm:text-[10px]">SWITCH DEF [Q]</button>
-          <button id="btn-def-audible" class="pixel-btn btn-slate px-3 py-2 text-[9px] sm:text-[10px]">AUDIBLE</button>
-          <button id="btn-def-hike" class="pixel-btn btn-green px-4 sm:px-5 py-2 text-[10px] sm:text-xs">READY / SNAP [SPACE]</button>
+      <div id="overlay-def-presnap" class="hidden pointer-events-none absolute inset-x-0 bottom-3 flex flex-col items-center gap-2 z-30 px-2 sm:px-3">
+        <div class="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <span id="def-presnap-play-name" class="text-[9px] sm:text-xs text-sky-300 drop-shadow-[0_2px_0_rgba(0,0,0,0.95)]">DEF: COVER 2 ZONE</span>
+          <button id="btn-def-presnap-switch" class="pointer-events-auto pixel-btn btn-blue px-3 py-2 text-[9px] sm:text-[10px]">SWITCH DEF [Q]</button>
+          <button id="btn-def-audible" class="pointer-events-auto pixel-btn btn-slate px-3 py-2 text-[9px] sm:text-[10px]">AUDIBLE</button>
+          <button id="btn-def-hike" class="pointer-events-auto pixel-btn btn-green px-4 sm:px-5 py-2 text-[10px] sm:text-xs">READY / SNAP [SPACE]</button>
         </div>
       </div>
 
