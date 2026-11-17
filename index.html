@@ -155,6 +155,10 @@
     #mobile-portrait-hint {
       display: none;
     }
+    #hud-presnap-left,
+    #hud-presnap-right {
+      display: none !important;
+    }
     @media (max-width: 639px) and (orientation: portrait) {
       #mobile-portrait-hint:not(.hint-dismissed) {
         display: flex;
@@ -365,46 +369,83 @@
         max-width: 44vw !important;
       }
 
-      /* Put Mobile Pre-Snap Hike & Audible Buttons in the Same Middle-Right Spot as TURBO & SCRAMBLE */
+      /* Mobile Pre-Snap Buttons Move Into Top Scoreboard Bar Flanking Down & Distance (Leaves Field & Endzones Clear) */
       #overlay-presnap,
       #overlay-def-presnap {
-        left: auto !important;
-        right: 4px !important;
-        top: 50% !important;
-        bottom: auto !important;
-        transform: translateY(-50%) !important;
-        width: auto !important;
-        max-width: min(56vw, 320px) !important;
-        padding: 0 !important;
-        align-items: flex-end !important;
+        display: none !important;
       }
-      #overlay-presnap > div,
-      #overlay-def-presnap > div {
-        padding: 0 !important;
-        gap: 6px !important;
-        justify-content: flex-end !important;
+      #hud-presnap-left:not(.hidden),
+      #hud-presnap-right:not(.hidden) {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
       }
-      #overlay-def-presnap > div {
-        flex-direction: column !important;
-        align-items: flex-end !important;
-        flex-wrap: nowrap !important;
-      }
-      #presnap-play-name,
-      #def-presnap-play-name {
-        width: 100% !important;
-        text-align: right !important;
+      #hud-presnap-left button,
+      #hud-presnap-right button {
+        min-height: 30px !important;
+        padding: 4px 7px !important;
         font-size: 0.52rem !important;
-        line-height: 1.2 !important;
+        line-height: 1.1 !important;
+        white-space: nowrap !important;
       }
-      #btn-audible,
-      #btn-hike,
-      #btn-def-presnap-switch,
-      #btn-def-audible,
-      #btn-def-hike {
-        min-height: 44px !important;
-        padding: 8px 10px !important;
-        font-size: 0.56rem !important;
-        line-height: 1.15 !important;
+      @media (min-width: 560px) {
+        #top-scoreboard-hud {
+          display: flex !important;
+          flex-wrap: nowrap !important;
+          align-items: center !important;
+          justify-content: space-between !important;
+          gap: 6px !important;
+        }
+        #hud-left-col {
+          flex: 1 1 0% !important;
+          min-width: max-content !important;
+          justify-content: flex-start !important;
+          flex-wrap: nowrap !important;
+        }
+        #hud-center-col {
+          flex: 0 0 auto !important;
+          padding: 0 2px !important;
+        }
+        #hud-right-col {
+          flex: 1 1 0% !important;
+          min-width: max-content !important;
+          justify-content: flex-end !important;
+          flex-wrap: nowrap !important;
+        }
+        #hud-presnap-left {
+          margin-left: auto !important;
+          margin-right: 2px !important;
+        }
+        #hud-presnap-right {
+          margin-right: auto !important;
+          margin-left: 2px !important;
+        }
+      }
+      @media (max-width: 559px) {
+        #top-scoreboard-hud {
+          grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+          align-items: start !important;
+          gap: 4px !important;
+        }
+        #hud-left-col {
+          flex-wrap: wrap !important;
+          justify-content: flex-start !important;
+        }
+        #hud-right-col {
+          flex-wrap: wrap !important;
+          justify-content: flex-end !important;
+        }
+        #hud-presnap-left {
+          flex-basis: 100% !important;
+          margin-top: 4px !important;
+          justify-content: flex-start !important;
+        }
+        #hud-presnap-right {
+          flex-basis: 100% !important;
+          order: 10 !important;
+          margin-top: 4px !important;
+          justify-content: flex-end !important;
+        }
       }
 
       /* Mobile Playcall Overlays: Optimal Fit Without Changing Visual Style */
@@ -748,8 +789,8 @@
   <div id="screen-game" class="hidden w-full h-full flex flex-col bg-[#082f15] relative">
     <!-- Top Scoreboard & Live Stat Tracker HUD -->
     <div id="top-scoreboard-hud" class="bg-slate-950 border-b-4 border-yellow-400 px-2 sm:px-5 py-1.5 sm:py-3.5 min-h-[52px] sm:min-h-[76px] grid grid-cols-3 items-center gap-1 sm:gap-2 z-20 text-[11px] sm:text-sm">
-      <!-- Left: Away Team Score + Live Stat Tracker -->
-      <div class="flex items-center justify-start gap-1.5 sm:gap-3.5 min-w-0">
+      <!-- Left: Away Team Score + Live Stat Tracker / Mobile Pre-Snap Left Controls -->
+      <div id="hud-left-col" class="flex items-center justify-start gap-1.5 sm:gap-3.5 min-w-0">
         <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
           <div id="hud-away-color" class="w-3.5 h-3.5 sm:w-5 sm:h-5 border-2 border-white bg-red-600"></div>
           <span id="hud-away-name" class="text-slate-200 font-bold text-xs sm:text-base">CPU</span>
@@ -759,16 +800,25 @@
           <span class="text-sky-300 truncate">PASS: -- 0 YDS, 0 TD, 0 INT</span>
           <span class="text-emerald-300 truncate">REC: -- 0 YDS &bull; RUSH: -- 0 YDS</span>
         </div>
+        <div id="hud-presnap-left" class="hidden items-center gap-1 shrink-0">
+          <button id="btn-hud-off-audible" class="hidden pixel-btn btn-slate px-2 py-1 text-[9px]">AUDIBLE</button>
+          <button id="btn-hud-def-switch" class="hidden pixel-btn btn-blue px-2 py-1 text-[9px]">SWITCH</button>
+          <button id="btn-hud-def-audible" class="hidden pixel-btn btn-slate px-2 py-1 text-[9px]">AUDIBLE</button>
+        </div>
       </div>
 
       <!-- Center: Down & Distance + Quarter & Game Clock -->
-      <div class="flex flex-col items-center justify-center text-center">
+      <div id="hud-center-col" class="flex flex-col items-center justify-center text-center">
         <div id="hud-down-dist" class="text-yellow-300 text-[10px] sm:text-base font-bold tracking-wide leading-tight">1ST &amp; 10 &bull; OWN 25</div>
         <div id="hud-clock" class="text-emerald-400 text-[10px] sm:text-sm mt-0.5 leading-tight">Q1 &bull; 02:00</div>
       </div>
 
-      <!-- Right: Home Team Live Stat Tracker + Score + Action Buttons -->
-      <div class="flex items-center justify-end gap-1.5 sm:gap-3 min-w-0">
+      <!-- Right: Mobile Pre-Snap Right Controls / Home Team Live Stat Tracker + Score + Action Buttons -->
+      <div id="hud-right-col" class="flex items-center justify-end gap-1.5 sm:gap-3 min-w-0">
+        <div id="hud-presnap-right" class="hidden items-center gap-1 shrink-0">
+          <button id="btn-hud-off-hike" class="hidden pixel-btn btn-green px-2.5 py-1 text-[9px]">HIKE BALL</button>
+          <button id="btn-hud-def-hike" class="hidden pixel-btn btn-green px-2 py-1 text-[9px]">READY / SNAP</button>
+        </div>
         <div id="hud-home-leaders" class="hidden sm:flex flex-col text-right text-[10px] lg:text-xs leading-tight text-slate-300 border-r-2 border-slate-700 pr-2.5 truncate">
           <span class="text-sky-300 truncate">PASS: -- 0 YDS, 0 TD, 0 INT</span>
           <span class="text-emerald-300 truncate">REC: -- 0 YDS &bull; RUSH: -- 0 YDS</span>
@@ -5554,6 +5604,7 @@ function ensureCareerSeasonIntegrity() {
       offCarouselIdx = 0;
       renderOffensivePlaybookUI();
       document.getElementById('overlay-playcall').classList.remove('hidden');
+      updateMobileControls();
       updateGameHUD();
     }
 
@@ -5660,6 +5711,7 @@ function ensureCareerSeasonIntegrity() {
       defCarouselIdx = 0;
       renderDefensivePlaybookUI();
       document.getElementById('overlay-def-playcall').classList.remove('hidden');
+      updateMobileControls();
       updateGameHUD();
     }
 
@@ -6070,6 +6122,7 @@ function ensureCareerSeasonIntegrity() {
       document.getElementById('overlay-playcall').classList.add('hidden');
       document.getElementById('presnap-play-name').textContent = `${play.formation} • ${play.name}`;
       document.getElementById('overlay-presnap').classList.remove('hidden');
+      updateMobileControls();
     }
 
     function hikeBall() {
@@ -6247,6 +6300,23 @@ function ensureCareerSeasonIntegrity() {
       const isDefLive = match.possession === 'CPU' && match.phase === 'DEF_LIVE';
       const isLive = isUserLive || isDefLive;
       const showTouchPad = shouldShowTouchJoystick();
+
+      const isOffPresnap = match.possession === 'USER' && match.phase === 'PRESNAP';
+      const isDefPresnap = match.possession === 'CPU' && match.phase === 'DEF_PRESNAP';
+      const hudLeft = document.getElementById('hud-presnap-left');
+      const hudRight = document.getElementById('hud-presnap-right');
+      const hudOffAud = document.getElementById('btn-hud-off-audible');
+      const hudOffHike = document.getElementById('btn-hud-off-hike');
+      const hudDefSw = document.getElementById('btn-hud-def-switch');
+      const hudDefAud = document.getElementById('btn-hud-def-audible');
+      const hudDefHike = document.getElementById('btn-hud-def-hike');
+      if (hudLeft) hudLeft.classList.toggle('hidden', !(isOffPresnap || isDefPresnap));
+      if (hudRight) hudRight.classList.toggle('hidden', !(isOffPresnap || isDefPresnap));
+      if (hudOffAud) hudOffAud.classList.toggle('hidden', !isOffPresnap);
+      if (hudOffHike) hudOffHike.classList.toggle('hidden', !isOffPresnap);
+      if (hudDefSw) hudDefSw.classList.toggle('hidden', !isDefPresnap);
+      if (hudDefAud) hudDefAud.classList.toggle('hidden', !isDefPresnap);
+      if (hudDefHike) hudDefHike.classList.toggle('hidden', !isDefPresnap);
 
       if (!isLive) resetTouchControls();
 
@@ -6602,6 +6672,7 @@ function ensureCareerSeasonIntegrity() {
       const joyZoneKick = document.getElementById('touch-joystick-zone');
       if (joyZoneKick) joyZoneKick.classList.add('hidden');
       resetTouchControls();
+      updateMobileControls();
 
       const dir = match.driveDir || 1;
       const targetEz = dir === 1 ? 110 : 10;
@@ -6773,6 +6844,7 @@ function ensureCareerSeasonIntegrity() {
         if (el) el.classList.add('hidden');
       });
       resetTouchControls();
+      updateMobileControls();
 
       const won = match.userScore >= match.cpuScore;
       if (won) sfx.playTouchdown();
@@ -8557,6 +8629,23 @@ function ensureCareerSeasonIntegrity() {
     document.getElementById('btn-def-hike').addEventListener('click', snapCpuOffenseBall);
     document.getElementById('btn-def-presnap-switch').addEventListener('click', cycleSelectedDefender);
     document.getElementById('btn-def-audible').addEventListener('click', () => {
+      sfx.playClick();
+      openDefensivePlaycallOverlay();
+    });
+
+    const hudOffHikeBtn = document.getElementById('btn-hud-off-hike');
+    if (hudOffHikeBtn) hudOffHikeBtn.addEventListener('click', hikeBall);
+    const hudOffAudBtn = document.getElementById('btn-hud-off-audible');
+    if (hudOffAudBtn) hudOffAudBtn.addEventListener('click', () => {
+      sfx.playClick();
+      openPlaycallOverlay();
+    });
+    const hudDefHikeBtn = document.getElementById('btn-hud-def-hike');
+    if (hudDefHikeBtn) hudDefHikeBtn.addEventListener('click', snapCpuOffenseBall);
+    const hudDefSwBtn = document.getElementById('btn-hud-def-switch');
+    if (hudDefSwBtn) hudDefSwBtn.addEventListener('click', cycleSelectedDefender);
+    const hudDefAudBtn = document.getElementById('btn-hud-def-audible');
+    if (hudDefAudBtn) hudDefAudBtn.addEventListener('click', () => {
       sfx.playClick();
       openDefensivePlaycallOverlay();
     });
