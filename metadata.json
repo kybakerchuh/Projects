@@ -1,0 +1,6 @@
+{
+  "name": "Gridiron Dynasty '92",
+  "description": "16-Bit Pro Football & Franchise Manager",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

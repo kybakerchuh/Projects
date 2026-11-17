@@ -1,0 +1,135 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private user account root document anchoring per-device dynasty saves.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Firebase Authentication UID of the account owner.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Verified Google account email (strictly isolated to owner).",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "displayName": {
+          "type": "string",
+          "description": "Player display name shown in local title bar.",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when user root record was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp of latest profile sync."
+        }
+      },
+      "required": ["uid", "email", "displayName", "createdAt", "updatedAt"]
+    },
+    "DeviceDynastySave": {
+      "title": "DeviceDynastySave",
+      "description": "Online dynasty save scoped to a player's specific device using native Firestore maps and lists.",
+      "type": "object",
+      "properties": {
+        "ownerUid": {
+          "type": "string",
+          "description": "Immutable UID of the authenticated player owning this save.",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "deviceId": {
+          "type": "string",
+          "description": "Immutable device identifier generated and persisted on the player's browser/device.",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "deviceLabel": {
+          "type": "string",
+          "description": "Human-readable label describing the device/browser.",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "teamId": {
+          "type": "string",
+          "description": "Selected 2-3 letter franchise abbreviation.",
+          "minLength": 2,
+          "maxLength": 5,
+          "pattern": "^[A-Z0-9]+$"
+        },
+        "season": {
+          "type": "integer",
+          "description": "Current dynasty season number (>= 1)."
+        },
+        "week": {
+          "type": "integer",
+          "description": "Current dynasty week number (1-30)."
+        },
+        "phase": {
+          "type": "string",
+          "description": "Current dynasty phase.",
+          "enum": ["REGULAR", "PLAYOFFS", "OFFSEASON"],
+          "maxLength": 20
+        },
+        "rings": {
+          "type": "integer",
+          "description": "Championship rings won in this dynasty."
+        },
+        "careerData": {
+          "type": "object",
+          "description": "Structured native Firestore map containing roster, leagueRosters, standings, schedule, weekGames, playoffs, freeAgents, draftClass, and history."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when this device save was first created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when this device save was last updated."
+        }
+      },
+      "required": [
+        "ownerUid",
+        "deviceId",
+        "deviceLabel",
+        "teamId",
+        "season",
+        "week",
+        "phase",
+        "rings",
+        "careerData",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
+      "description": "Private player profile root documents, strictly accessible only by the matching verified owner."
+    },
+    "/users/{userId}/deviceSaves/{deviceId}": {
+      "schema": {
+        "$ref": "#/entities/DeviceDynastySave"
+      },
+      "description": "Online dynasty saves anchored beneath each verified player's user document (uses shared 'activeCareer' ID for cross-device sync)."
+    }
+  }
+}

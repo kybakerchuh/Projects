@@ -1,0 +1,241 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all paths unless explicitly permitted
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // =========================================================
+    // GLOBAL PRIMITIVES
+    // =========================================================
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidDeviceId(id) {
+      return id is string && id.size() >= 4 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function parentUserMatches(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId))
+        && get(/databases/$(database)/documents/users/$(userId)).data.uid == request.auth.uid;
+    }
+
+    // =========================================================
+    // VALIDATION BLUEPRINTS
+    // =========================================================
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'createdAt', 'updatedAt'])
+        && isValidId(data.uid)
+        && data.uid == request.auth.uid
+        && data.uid == userId
+        && data.email is string
+        && data.email.size() >= 3
+        && data.email.size() <= 254
+        && data.displayName is string
+        && data.displayName.size() >= 1
+        && data.displayName.size() <= 100
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidCareerMap(cd, teamId, season, week, phase) {
+      return cd is map
+        && cd.keys().hasAll(['teamId', 'season', 'week', 'phase', 'roster', 'schedule', 'standings'])
+        && cd.keys().hasOnly([
+          'activeFacilityKeys',
+          'byeWeeks',
+          'capLimit',
+          'cc',
+          'draftClass',
+          'draftState',
+          'facilities',
+          'freeAgents',
+          'leagueRosters',
+          'phase',
+          'playoffs',
+          'retiredLegends',
+          'rings',
+          'roster',
+          'schedule',
+          'season',
+          'seasonDrillsUsed',
+          'seasonHistory',
+          'standings',
+          'teamId',
+          'week',
+          'weekGames'
+        ])
+        && cd.teamId is string
+        && cd.teamId == teamId
+        && cd.season is int
+        && cd.season == season
+        && cd.week is int
+        && cd.week == week
+        && cd.phase is string
+        && cd.phase == phase
+        && cd.roster is list
+        && cd.roster.size() >= 1
+        && cd.roster.size() <= 80
+        && cd.roster[0] is map
+        && cd.schedule is list
+        && cd.schedule.size() >= 1
+        && cd.schedule.size() <= 30
+        && cd.schedule[0] is map
+        && cd.standings is map;
+    }
+
+    function isValidDeviceDynastySave(data, userId, deviceId) {
+      return data.keys().hasAll([
+          'ownerUid',
+          'deviceId',
+          'deviceLabel',
+          'teamId',
+          'season',
+          'week',
+          'phase',
+          'rings',
+          'careerData',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'ownerUid',
+          'deviceId',
+          'deviceLabel',
+          'teamId',
+          'season',
+          'week',
+          'phase',
+          'rings',
+          'careerData',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.ownerUid)
+        && data.ownerUid == request.auth.uid
+        && data.ownerUid == userId
+        && isValidDeviceId(data.deviceId)
+        && data.deviceId == deviceId
+        && data.deviceLabel is string
+        && data.deviceLabel.size() >= 1
+        && data.deviceLabel.size() <= 80
+        && data.teamId is string
+        && data.teamId.size() >= 2
+        && data.teamId.size() <= 5
+        && data.teamId.matches('^[A-Z0-9]+$')
+        && data.season is int
+        && data.season >= 1
+        && data.season <= 999
+        && data.week is int
+        && data.week >= 1
+        && data.week <= 30
+        && data.phase is string
+        && data.phase.size() <= 20
+        && data.phase in ['REGULAR', 'PLAYOFFS', 'OFFSEASON']
+        && data.rings is int
+        && data.rings >= 0
+        && data.rings <= 999
+        && isValidCareerMap(data.careerData, data.teamId, data.season, data.week, data.phase)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // =========================================================
+    // COLLECTION MATCH BLOCKS
+    // =========================================================
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isOwner(userId);
+      allow list: if false;
+
+      allow create: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isValidId(userId)
+        && isOwner(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['email', 'displayName', 'updatedAt'])
+        );
+
+      allow delete: if false;
+
+      match /deviceSaves/{deviceId} {
+        allow get: if isValidId(userId)
+          && isValidDeviceId(deviceId)
+          && isOwner(userId)
+          && existing().ownerUid == request.auth.uid;
+
+        allow list: if isValidId(userId)
+          && isOwner(userId)
+          && existing().ownerUid == request.auth.uid;
+
+        allow create: if isValidId(userId)
+          && isValidDeviceId(deviceId)
+          && isOwner(userId)
+          && isValidDeviceDynastySave(incoming(), userId, deviceId)
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && parentUserMatches(userId);
+
+        allow update: if isValidId(userId)
+          && isValidDeviceId(deviceId)
+          && isOwner(userId)
+          && isValidDeviceDynastySave(incoming(), userId, deviceId)
+          && incoming().ownerUid == existing().ownerUid
+          && incoming().deviceId == existing().deviceId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && parentUserMatches(userId)
+          && (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'deviceLabel',
+              'teamId',
+              'season',
+              'week',
+              'phase',
+              'rings',
+              'careerData',
+              'updatedAt'
+            ])
+          );
+
+        allow delete: if isValidId(userId)
+          && isValidDeviceId(deviceId)
+          && isOwner(userId)
+          && existing().ownerUid == request.auth.uid
+          && parentUserMatches(userId);
+      }
+    }
+  }
+}
