@@ -696,13 +696,6 @@
 
       <!-- In-Game Touch / Quick Action Controls -->
       <div id="mobile-controls" class="hidden absolute bottom-3 right-3 z-20 flex flex-col items-end gap-1.5 max-w-[56vw]">
-        <div id="touch-quick-pass" class="hidden flex flex-wrap justify-end gap-1.5">
-          <button data-pass-idx="0" class="touch-pass-btn pixel-btn btn-gold px-3 py-2 min-w-[38px] min-h-[40px] text-xs opacity-95">1</button>
-          <button data-pass-idx="1" class="touch-pass-btn pixel-btn btn-gold px-3 py-2 min-w-[38px] min-h-[40px] text-xs opacity-95">2</button>
-          <button data-pass-idx="2" class="touch-pass-btn pixel-btn btn-gold px-3 py-2 min-w-[38px] min-h-[40px] text-xs opacity-95">3</button>
-          <button data-pass-idx="3" class="touch-pass-btn pixel-btn btn-gold px-3 py-2 min-w-[38px] min-h-[40px] text-xs opacity-95">4</button>
-          <button data-pass-idx="4" class="touch-pass-btn pixel-btn btn-gold px-3 py-2 min-w-[38px] min-h-[40px] text-xs opacity-95">5</button>
-        </div>
         <div class="flex flex-wrap justify-end gap-2">
           <button id="btn-turbo" class="pixel-btn btn-blue px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">TURBO</button>
           <button id="btn-qb-scramble" class="hidden pixel-btn btn-gold px-4 py-3 min-h-[46px] text-[10px] sm:text-xs opacity-95">SCRAMBLE</button>
@@ -6028,7 +6021,6 @@ function ensureCareerSeasonIntegrity() {
     function updateMobileControls() {
       const box = document.getElementById('mobile-controls');
       const joyZone = document.getElementById('touch-joystick-zone');
-      const quickPassBox = document.getElementById('touch-quick-pass');
       const scrambleBtn = document.getElementById('btn-qb-scramble');
       const jukeBtn = document.getElementById('btn-juke');
       const swBtn = document.getElementById('btn-def-switch');
@@ -6044,17 +6036,6 @@ function ensureCareerSeasonIntegrity() {
 
       box.classList.toggle('hidden', !isLive || touchPadMode === 'OFF');
       if (joyZone) joyZone.classList.toggle('hidden', !isLive || !showTouchPad);
-      if (quickPassBox) {
-        const showQuickPass = showTouchPad && match.possession === 'USER' && match.phase === 'PASS_DROPBACK';
-        quickPassBox.classList.toggle('hidden', !showQuickPass);
-        if (showQuickPass) {
-          quickPassBox.querySelectorAll('.touch-pass-btn').forEach(btn => {
-            const idx = parseInt(btn.getAttribute('data-pass-idx') || '-1', 10);
-            const hasRec = match.players.some(p => p.side === 'OFF' && p.isEligible && p.num === idx + 2);
-            btn.classList.toggle('hidden', !hasRec);
-          });
-        }
-      }
       if (scrambleBtn) scrambleBtn.classList.toggle('hidden', !(match.possession === 'USER' && match.phase === 'PASS_DROPBACK'));
       if (jukeBtn) jukeBtn.classList.toggle('hidden', !(match.possession === 'USER' && match.phase === 'RUN_PLAY'));
       if (swBtn) swBtn.classList.toggle('hidden', !isDefLive);
@@ -8520,17 +8501,6 @@ function ensureCareerSeasonIntegrity() {
     if (mobileControlsEl) {
       mobileControlsEl.addEventListener('pointerdown', (e) => e.stopPropagation());
     }
-
-    document.querySelectorAll('.touch-pass-btn').forEach(btn => {
-      btn.addEventListener('pointerdown', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!match || match.possession !== 'USER' || match.phase !== 'PASS_DROPBACK') return;
-        const idx = parseInt(btn.getAttribute('data-pass-idx') || '-1', 10);
-        const rec = match.players.find(p => p.side === 'OFF' && p.isEligible && p.num === idx + 2);
-        if (rec) passToReceiver(rec);
-      });
-    });
 
     const turboBtn = document.getElementById('btn-turbo');
     turboBtn.addEventListener('pointerdown', (e) => {
