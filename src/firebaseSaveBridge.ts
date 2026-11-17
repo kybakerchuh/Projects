@@ -181,7 +181,7 @@ function readLocalSave(): CareerLike | null {
   try {
     const direct = window.localStorage.getItem(LOCAL_SAVE_KEY);
     if (direct) {
-      const parsed = JSON.parse(direct) as CareerLike;
+      const parsed = restoreFromFirestore(JSON.parse(direct)) as CareerLike;
       if (parsed && typeof parsed === 'object' && typeof parsed.teamId === 'string') {
         return parsed;
       }
@@ -190,7 +190,7 @@ function readLocalSave(): CareerLike | null {
     if (legacyId) {
       const legacyRaw = window.localStorage.getItem(`gd92_device_save_${legacyId}`);
       if (legacyRaw) {
-        const parsed = JSON.parse(legacyRaw) as CareerLike;
+        const parsed = restoreFromFirestore(JSON.parse(legacyRaw)) as CareerLike;
         if (parsed && typeof parsed === 'object' && typeof parsed.teamId === 'string') {
           return parsed;
         }
@@ -210,6 +210,8 @@ function writeLocalSave(careerObj: CareerLike): boolean {
     return false;
   }
 }
+
+const NESTED_ARRAY_KEY = '__gdNestedArr';
 
 function stripUndefinedDeep(value: unknown): unknown {
   if (value === undefined) return null;
@@ -233,6 +235,52 @@ function stripUndefinedDeep(value: unknown): unknown {
     return out;
   }
   return null;
+}
+
+function sanitizeForFirestore(value: unknown, insideArray = false): unknown {
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : 0;
+  }
+  if (typeof value === 'string' || typeof value === 'boolean') {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    const items = value.map((item) => sanitizeForFirestore(item, true));
+    if (insideArray) {
+      return { [NESTED_ARRAY_KEY]: items };
+    }
+    return items;
+  }
+  if (typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v !== undefined) {
+        out[k] = sanitizeForFirestore(v, false);
+      }
+    }
+    return out;
+  }
+  return null;
+}
+
+function restoreFromFirestore<T>(value: T): T {
+  if (value === null || value === undefined || typeof value !== 'object') {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => restoreFromFirestore(item)) as unknown as T;
+  }
+  const obj = value as Record<string, unknown>;
+  const keys = Object.keys(obj);
+  if (keys.length === 1 && keys[0] === NESTED_ARRAY_KEY && Array.isArray(obj[NESTED_ARRAY_KEY])) {
+    return (obj[NESTED_ARRAY_KEY] as unknown[]).map((item) => restoreFromFirestore(item)) as unknown as T;
+  }
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    out[k] = restoreFromFirestore(v);
+  }
+  return out as T;
 }
 
 function normalizeCareerPayload(rawCareer: CareerLike): {
@@ -261,7 +309,7 @@ function normalizeCareerPayload(rawCareer: CareerLike): {
   const careerData: Record<string, unknown> = {};
   for (const [key, val] of Object.entries(rawCareer)) {
     if (ALLOWED_CAREER_KEYS.has(key) && val !== undefined) {
-      careerData[key] = stripUndefinedDeep(val);
+      careerData[key] = sanitizeForFirestore(val, false);
     }
   }
 
@@ -507,7 +555,7 @@ async function loadCareerCloudImpl(): Promise<CareerLike | null> {
       if (snap.exists()) {
         const data = snap.data();
         if (data && data.ownerUid === user.uid && data.careerData && typeof data.careerData === 'object') {
-          const careerCopy = JSON.parse(JSON.stringify(data.careerData)) as CareerLike;
+          const careerCopy = restoreFromFirestore(JSON.parse(JSON.stringify(data.careerData))) as CareerLike;
           window.__cloudSaveBridge!.cachedSave = careerCopy;
           writeLocalSave(careerCopy);
           cloudSyncStatusText = 'SYNCED';
@@ -528,7 +576,7 @@ async function loadCareerCloudImpl(): Promise<CareerLike | null> {
         if (legacySnap.exists()) {
           const legacyData = legacySnap.data();
           if (legacyData && legacyData.careerData && typeof legacyData.careerData === 'object') {
-            const careerCopy = JSON.parse(JSON.stringify(legacyData.careerData)) as CareerLike;
+            const careerCopy = restoreFromFirestore(JSON.parse(JSON.stringify(legacyData.careerData))) as CareerLike;
             await saveCareerCloudImpl(careerCopy);
             return careerCopy;
           }
@@ -644,7 +692,7 @@ onAuthStateChanged(auth, async (user) => {
       if (existingCloudSnap.exists()) {
         const existingData = existingCloudSnap.data();
         if (existingData && existingData.careerData && typeof existingData.careerData === 'object') {
-          const careerCopy = JSON.parse(JSON.stringify(existingData.careerData)) as CareerLike;
+          const careerCopy = restoreFromFirestore(JSON.parse(JSON.stringify(existingData.careerData))) as CareerLike;
           bridge.cachedSave = careerCopy;
           writeLocalSave(careerCopy);
         }
@@ -656,7 +704,7 @@ onAuthStateChanged(auth, async (user) => {
           if (legacySnap.exists()) {
             const legacyData = legacySnap.data();
             if (legacyData && legacyData.careerData && typeof legacyData.careerData === 'object') {
-              seedCareer = JSON.parse(JSON.stringify(legacyData.careerData)) as CareerLike;
+              seedCareer = restoreFromFirestore(JSON.parse(JSON.stringify(legacyData.careerData))) as CareerLike;
             }
           }
         }
@@ -674,7 +722,7 @@ onAuthStateChanged(auth, async (user) => {
           if (snap.exists()) {
             const data = snap.data();
             if (data && data.careerData && typeof data.careerData === 'object') {
-              const careerCopy = JSON.parse(JSON.stringify(data.careerData)) as CareerLike;
+              const careerCopy = restoreFromFirestore(JSON.parse(JSON.stringify(data.careerData))) as CareerLike;
               bridge.cachedSave = careerCopy;
               writeLocalSave(careerCopy);
               cloudSyncStatusText = 'SYNCED';
