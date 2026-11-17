@@ -318,14 +318,42 @@
         -webkit-overflow-scrolling: touch;
       }
 
-      /* Mobile Modals Safe Height */
+      /* Mobile Modals Safe Height (clamp to #canvas-wrap, not 90dvh which exceeds landscape canvas height) */
+      #overlay-kick,
+      #overlay-sim,
+      #overlay-boxscore,
+      #overlay-postgame {
+        padding: 8px !important;
+      }
       #overlay-kick > div,
       #overlay-sim > div,
-      #overlay-boxscore > div,
       #overlay-postgame > div {
-        max-height: 90dvh !important;
+        max-height: 100% !important;
         overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
         padding: 12px !important;
+      }
+      #overlay-boxscore > div {
+        display: flex !important;
+        flex-direction: column !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
+        padding: 10px !important;
+      }
+      #overlay-boxscore > div > div:first-child {
+        flex-shrink: 0 !important;
+        padding-bottom: 8px !important;
+        margin-bottom: 8px !important;
+      }
+      #boxscore-body {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        touch-action: pan-y !important;
+        overscroll-behavior: contain;
+        padding-bottom: 12px !important;
       }
 
       /* Anchor mobile action buttons (TURBO, SCRAMBLE, JUKE, etc.) to middle-right edge away from bottom-right overlays */
