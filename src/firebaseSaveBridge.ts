@@ -1,9 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import {
   getAuth,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   type User,
 } from 'firebase/auth';
@@ -351,6 +353,45 @@ async function ensureUserProfile(user: User): Promise<void> {
 const deviceLabel = getDeviceLabel();
 let activeSnapshotUnsub: Unsubscribe | null = null;
 let cloudSyncStatusText = '';
+let authErrorText = '';
+
+function formatAuthErrorMessage(err: unknown): { code: string; text: string } {
+  const code =
+    typeof err === 'object' && err !== null && 'code' in err
+      ? String((err as { code: unknown }).code)
+      : '';
+  const host = typeof window !== 'undefined' ? window.location.hostname : '';
+
+  if (code === 'auth/unauthorized-domain') {
+    return {
+      code,
+      text: `GOOGLE SIGN-IN BLOCKED: ADD "${host}" IN FIREBASE CONSOLE → AUTHENTICATION → AUTHORIZED DOMAINS`,
+    };
+  }
+  if (code === 'auth/operation-not-allowed') {
+    return {
+      code,
+      text: 'ENABLE GOOGLE SIGN-IN IN FIREBASE CONSOLE → AUTHENTICATION → SIGN-IN METHOD',
+    };
+  }
+  if (code === 'auth/popup-blocked') {
+    return {
+      code,
+      text: 'POPUP BLOCKED BY BROWSER — ALLOW POPUPS FOR THIS SITE AND TRY AGAIN',
+    };
+  }
+  if (code === 'auth/network-request-failed') {
+    return {
+      code,
+      text: 'NETWORK ERROR DURING GOOGLE SIGN-IN — CHECK CONNECTION AND TRY AGAIN',
+    };
+  }
+  if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+    return { code, text: '' };
+  }
+  const msg = err instanceof Error ? err.message : String(err || 'UNKNOWN');
+  return { code, text: `GOOGLE SIGN-IN FAILED (${code || msg.slice(0, 60)})` };
+}
 
 function renderCloudBarUI(): void {
   const bridge = window.__cloudSaveBridge;
@@ -364,7 +405,12 @@ function renderCloudBarUI(): void {
     if (bridge.userId) {
       const who = bridge.displayName || bridge.userEmail || bridge.userId.slice(0, 8);
       statusEl.textContent = `CROSS-DEVICE CLOUD SAVE ACTIVE • COACH: ${who}${cloudSyncStatusText ? ` (${cloudSyncStatusText})` : ''}`;
-      statusEl.className = 'text-[10px] sm:text-xs text-emerald-300';
+      statusEl.className = cloudSyncStatusText.startsWith('SYNC ERROR')
+        ? 'text-[10px] sm:text-xs text-rose-300'
+        : 'text-[10px] sm:text-xs text-emerald-300';
+    } else if (authErrorText) {
+      statusEl.textContent = authErrorText;
+      statusEl.className = 'text-[10px] sm:text-xs text-rose-300';
     } else if (!bridge.authReady) {
       statusEl.textContent = 'CHECKING CLOUD SESSION...';
       statusEl.className = 'text-[10px] sm:text-xs text-slate-300';
@@ -512,20 +558,46 @@ window.__cloudSaveBridge = {
   displayName: null,
   cachedSave: initialLocalSave,
   signInWithGoogle: async () => {
+    authErrorText = '';
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: 'select_account' });
     try {
       await signInWithPopup(auth, provider);
       return true;
     } catch (err: unknown) {
-      const code = typeof err === 'object' && err !== null && 'code' in err ? String((err as { code: unknown }).code) : '';
-      if (code !== 'auth/popup-closed-by-user' && code !== 'auth/cancelled-popup-request') {
+      const { code, text } = formatAuthErrorMessage(err);
+      const isTopLevelWindow = (() => {
+        try {
+          return window.self === window.top;
+        } catch {
+          return false;
+        }
+      })();
+      if (
+        isTopLevelWindow &&
+        (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment')
+      ) {
+        try {
+          await signInWithRedirect(auth, provider);
+          return true;
+        } catch (redirErr: unknown) {
+          const redirFmt = formatAuthErrorMessage(redirErr);
+          authErrorText = redirFmt.text || text;
+          renderCloudBarUI();
+          console.error('Google Sign-In redirect failed:', redirErr);
+          return false;
+        }
+      }
+      if (text) {
+        authErrorText = text;
+        renderCloudBarUI();
         console.error('Google Sign-In failed:', err);
       }
       return false;
     }
   },
   signOutCloud: async () => {
+    authErrorText = '';
     if (activeSnapshotUnsub) {
       activeSnapshotUnsub();
       activeSnapshotUnsub = null;
@@ -535,6 +607,15 @@ window.__cloudSaveBridge = {
   saveCareerCloud: saveCareerCloudImpl,
   loadCareerCloud: loadCareerCloudImpl,
 };
+
+void getRedirectResult(auth).catch((err: unknown) => {
+  const { text } = formatAuthErrorMessage(err);
+  if (text) {
+    authErrorText = text;
+    renderCloudBarUI();
+    console.error('Google Sign-In redirect result error:', err);
+  }
+});
 
 onAuthStateChanged(auth, async (user) => {
   if (activeSnapshotUnsub) {
@@ -610,7 +691,8 @@ onAuthStateChanged(auth, async (user) => {
       );
     } catch (err) {
       console.error('Cloud profile/save sync error:', err);
-      cloudSyncStatusText = 'SYNC ERROR';
+      const errMsg = err instanceof Error ? err.message : String(err || 'UNKNOWN');
+      cloudSyncStatusText = `SYNC ERROR (${errMsg.slice(0, 60)})`;
       renderCloudBarUI();
     }
   } else {
@@ -619,6 +701,9 @@ onAuthStateChanged(auth, async (user) => {
     bridge.displayName = null;
     bridge.cachedSave = readLocalSave();
     cloudSyncStatusText = '';
+    if (user && !user.emailVerified) {
+      authErrorText = 'GOOGLE ACCOUNT EMAIL MUST BE VERIFIED FOR CLOUD SAVE';
+    }
     renderCloudBarUI();
   }
 });
@@ -629,11 +714,12 @@ function wireCloudButtons(): void {
 
   if (signInBtn) {
     signInBtn.addEventListener('click', async () => {
-      signInBtn.disabled = true;
       const orig = signInBtn.textContent;
+      const signInPromise = window.__cloudSaveBridge?.signInWithGoogle();
+      signInBtn.disabled = true;
       signInBtn.textContent = 'SIGNING IN...';
       try {
-        await window.__cloudSaveBridge?.signInWithGoogle();
+        await signInPromise;
       } finally {
         signInBtn.disabled = false;
         signInBtn.textContent = orig || 'SIGN IN WITH GOOGLE (CLOUD SAVE)';

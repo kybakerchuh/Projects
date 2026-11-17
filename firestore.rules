@@ -194,7 +194,7 @@ service cloud.firestore {
         allow get: if isValidId(userId)
           && isValidDeviceId(deviceId)
           && isOwner(userId)
-          && existing().ownerUid == request.auth.uid;
+          && (resource == null || existing().ownerUid == request.auth.uid);
 
         allow list: if isValidId(userId)
           && isOwner(userId)
